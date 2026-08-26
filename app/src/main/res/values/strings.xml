@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">N3 Local View</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="display_mode">Display: %1$s</string>
+    <string name="auto_reconnect">Auto reconnect: %1$s</string>
+    <string name="state_on">ON</string>
+    <string name="state_off">OFF</string>
+    <string name="recover_now">Recover now</string>
+    <string name="export_diagnostics">Export diagnostics</string>
+    <string name="start_recording">Start recording</string>
+    <string name="stop_recording">Stop recording</string>
+</resources>
