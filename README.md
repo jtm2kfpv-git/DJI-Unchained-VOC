@@ -18,6 +18,17 @@ This repository is not affiliated with, endorsed by, or supported by DJI.
 - [`versions/`](versions/) contains clean, standalone source snapshots from **v0.1.0 through v0.5.0**.
 - The later N3 GUI/branding experiment and its logo are intentionally not included.
 
+## Proof of operation
+
+These demonstrations show the non-GUI v0.5.0 application receiving the goggles feed, switching display modes, recording raw H.264, and playing the recorded feed back.
+
+| Phone workflow | Recorded goggles feed |
+|---|---|
+| [![Phone screen workflow](docs/media/phone-workflow-preview.jpg)](https://github.com/jtm2kfpv-git/DJI_Video_Grabber/releases/download/v0.5.0/demo-phone-live-view-and-recording.mp4) | [![Recorded goggles feed](docs/media/recorded-feed-preview.jpg)](https://github.com/jtm2kfpv-git/DJI_Video_Grabber/releases/download/v0.5.0/demo-recorded-goggles-feed.mp4) |
+| Live USB view, controls, recording, and file save. | Raw goggles feed recorded by the application. |
+
+Click either preview to open the full video. The public demonstration copies have audio and media metadata removed for privacy.
+
 Experimental, privacy-minimal Android receiver for the wired live-view output of DJI Goggles N3 with DJI O4 Air Unit Pro or DJI Avata 2.
 
 ## Privacy properties
