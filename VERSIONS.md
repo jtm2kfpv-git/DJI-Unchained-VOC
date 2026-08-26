@@ -1,6 +1,6 @@
 # Published source versions
 
-Every non-GUI release is retained as a standalone, buildable source snapshot under `versions/`.
+Every release is retained as a standalone, buildable source snapshot under `versions/`. Experimental branded previews are clearly separated from the hardware-proven non-GUI line.
 
 | Version | Source folder | Status |
 |---|---|---|
@@ -9,5 +9,6 @@ Every non-GUI release is retained as a standalone, buildable source snapshot und
 | 0.3.0 | [`versions/v0.3.0/`](versions/v0.3.0/) | Preserved source snapshot |
 | 0.4.0 | [`versions/v0.4.0/`](versions/v0.4.0/) | Preserved source snapshot |
 | 0.5.0 | [`versions/v0.5.0/`](versions/v0.5.0/) | Preserved source snapshot; also published at the repository root |
+| 0.6.0 | [`versions/v0.6.0/`](versions/v0.6.0/) | **Experimental pre-release:** DJI Unchained VOC UI, aspect selector, 9:16 Shorts crop/preview and experimental MP4 capture |
 
-The N3 GUI v0.5.1 branding experiment and supplied logo are intentionally excluded from this repository.
+The earlier N3 GUI v0.5.1 branding experiment remains a separate special release. Version 0.6.0 is the first branded preview preserved in the source-version archive and is not the stable root version.
