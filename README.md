@@ -14,9 +14,9 @@ This repository is not affiliated with, endorsed by, or supported by DJI.
 
 ## Repository layout
 
-- The repository root contains the latest non-GUI version: **v0.5.0**.
-- [`versions/`](versions/) contains clean, standalone source snapshots from **v0.1.0 through v0.5.0**.
-- The later N3 GUI/branding experiment and its logo are intentionally not included.
+- The repository root remains the hardware-proven non-GUI line: **v0.5.0**.
+- [`versions/`](versions/) contains clean, standalone source snapshots from **v0.1.0 through v0.6.0**.
+- **v0.6.0** is an explicitly experimental DJI Unchained VOC preview. It adds aspect selection, a centered 9:16 Shorts crop/preview, experimental 720×1280 MP4 capture, and the supplied offline artwork/icon while preserving the proven USB/H.264 path.
 
 ## Proof of operation
 
@@ -41,7 +41,7 @@ Experimental, privacy-minimal Android receiver for the wired live-view output of
 
 ## Current status
 
-The original 0.1 implementation has been hardware-confirmed on Goggles N3 with DJI O4 Air Unit Pro / DJI Avata 2 and an Android 16 LineageOS phone. Later versions preserve that exact USB/protocol path. Version 0.5 adds permission-free local raw H.264 recording; its APK still needs a short on-device regression test after installation.
+The original 0.1 implementation has been hardware-confirmed on Goggles N3 with DJI O4 Air Unit Pro / DJI Avata 2 and an Android 16 LineageOS phone. Later versions preserve that exact USB/protocol path. Version 0.5 adds permission-free local raw H.264 recording. Version 0.6 adds an experimental branded UI and Shorts workflow; it is published as a pre-release and is not promoted as the stable line.
 
 Implemented:
 
@@ -113,7 +113,7 @@ Raw recordings can be played directly in VLC or remuxed without re-encoding:
 ffmpeg -i n3-recording.h264 -c copy n3-recording.mp4
 ```
 
-Each preserved release has a standalone source/APK folder under `GitHub-Submission/`.
+Each published version has a standalone source snapshot under [`versions/`](versions/). Installable APKs and checksum manifests are attached to the matching GitHub release.
 
 ## Protocol basis
 
