@@ -1,4 +1,10 @@
-# DJI Video Grabber — N3 Local View (Alpha)
+# DJI Unchained VOC (Alpha)
+
+<p align="center">
+  <img src="docs/media/dji-unchained-voc-logo.png" width="520" alt="DJI Unchained VOC logo">
+</p>
+
+<p align="center"><strong>Local DJI Goggles N3 live view for Android—without DJI Fly, accounts, analytics or cloud access.</strong></p>
 
 > **Alpha software:** this project is experimental and may fail, disconnect, show a corrupted image, or behave differently after DJI or Android firmware updates. Never rely on it for flight safety, navigation, or regulatory compliance.
 
@@ -18,16 +24,19 @@ This repository is not affiliated with, endorsed by, or supported by DJI.
 - [`versions/`](versions/) contains clean, standalone source snapshots from **v0.1.0 through v0.6.0**.
 - **v0.6.0** is an explicitly experimental DJI Unchained VOC preview. It adds aspect selection, a centered 9:16 Shorts crop/preview, experimental 720×1280 MP4 capture, and the supplied offline artwork/icon while preserving the proven USB/H.264 path.
 
-## Proof of operation
+## Hardware test gallery
 
-These demonstrations show the non-GUI v0.5.0 application receiving the goggles feed, switching display modes, recording raw H.264, and playing the recorded feed back.
+These are unedited screenshots supplied from the Android 16 hardware test of the v0.7.1 debug development build. They show the disconnected artwork, responsive controls, diagnostics, active Goggles N3 feed and 9:16 Shorts mode. The published source currently remains at v0.6.0 while the v0.7.x development line is being prepared for release.
 
-| Phone workflow | Recorded goggles feed |
-|---|---|
-| [![Phone screen workflow](docs/media/phone-workflow-preview.jpg)](https://github.com/jtm2kfpv-git/DJI_Video_Grabber/releases/download/v0.5.0/demo-phone-live-view-and-recording.mp4) | [![Recorded goggles feed](docs/media/recorded-feed-preview.jpg)](https://github.com/jtm2kfpv-git/DJI_Video_Grabber/releases/download/v0.5.0/demo-recorded-goggles-feed.mp4) |
-| Live USB view, controls, recording, and file save. | Raw goggles feed recorded by the application. |
+| Disconnected screen | Ready controls | Advanced diagnostics |
+|---|---|---|
+| <img src="docs/media/disconnected-logo.png" width="230" alt="Disconnected screen with DJI Unchained VOC artwork"> | <img src="docs/media/disconnected-controls.png" width="230" alt="DJI Unchained VOC controls waiting for USB video"> | <img src="docs/media/advanced-controls.png" width="230" alt="Expanded connection and diagnostic controls"> |
 
-Click either preview to open the full video. The public demonstration copies have audio and media metadata removed for privacy.
+| Live Goggles N3 view | 9:16 Shorts mode | Android launcher icon |
+|---|---|---|
+| <img src="docs/media/live-view-controls.png" width="230" alt="Live Goggles N3 video with controls"> | <img src="docs/media/shorts-mode.png" width="230" alt="9:16 Shorts crop and recording controls"> | <img src="docs/media/app-icon-on-android.png" width="230" alt="DJI Unchained VOC launcher icon on Android"> |
+
+Earlier v0.5.0 proof videos remain available for the [phone workflow](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-phone-live-view-and-recording.mp4) and [recorded goggles feed](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-recorded-goggles-feed.mp4). The public copies have audio and media metadata removed for privacy.
 
 Experimental, privacy-minimal Android receiver for the wired live-view output of DJI Goggles N3 with DJI O4 Air Unit Pro or DJI Avata 2.
 
@@ -83,7 +92,7 @@ Implemented:
 
 1. Remove propellers and provide cooling/airflow where required.
 2. Activate and link the aircraft/Air Unit normally; verify video in Goggles N3.
-3. Install and open N3 Local View.
+3. Install and open DJI Unchained VOC.
 4. Connect a known-good USB-C data cable from N3 to the phone.
 5. Note the accessory identity shown by the app and press **Connect**. Enable **Auto reconnect** only if desired.
 6. Use **Display: FIT** for the correct full-frame aspect ratio. **FILL** crops the edges to occupy the screen; **STRETCH** reproduces the original full-screen behavior.
