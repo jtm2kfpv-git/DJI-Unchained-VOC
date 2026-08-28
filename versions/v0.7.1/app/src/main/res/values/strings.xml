@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DJI Unchained VOC</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="display_mode">Display: %1$s</string>
+    <string name="source_aspect">Aspect: %1$s</string>
+    <string name="auto_reconnect">Auto reconnect: %1$s</string>
+    <string name="state_on">ON</string>
+    <string name="state_off">OFF</string>
+    <string name="recover_now">Recover now</string>
+    <string name="export_diagnostics">Export diagnostics</string>
+    <string name="start_recording">Start recording</string>
+    <string name="stop_recording">Stop recording</string>
+    <string name="keep_awake">Keep awake: %1$s</string>
+    <string name="start_shorts_recording">Record Shorts MP4</string>
+    <string name="stop_shorts_recording">Stop Shorts</string>
+    <string name="finishing_recording">Finishing…</string>
+    <string name="output_format">Output: %1$s</string>
+    <string name="capture_fps">Record FPS: %1$d</string>
+    <string name="advanced_settings">Advanced settings</string>
+    <string name="hide_advanced">Hide advanced</string>
+    <string name="retry_shorts_recording">Retry Shorts MP4</string>
+    <string name="record_original">Record original stream</string>
+</resources>

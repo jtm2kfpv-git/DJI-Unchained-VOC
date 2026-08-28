@@ -6,27 +6,24 @@
 
 <p align="center"><strong>Local DJI Goggles N3 live view for Android—without DJI Fly, accounts, analytics or cloud access.</strong></p>
 
-> **Alpha software:** this project is experimental and may fail, disconnect, show a corrupted image, or behave differently after DJI or Android firmware updates. Never rely on it for flight safety, navigation, or regulatory compliance.
+> **Alpha software:** this project is experimental and may fail or behave differently after DJI or Android firmware updates. Never rely on it for flight safety, navigation or regulatory compliance.
 
-An unofficial, privacy-minimal Android receiver for the wired live-view output of **DJI Goggles N3** when used with a **DJI O4 Air Unit Pro** or **DJI Avata 2**. It replaces the DJI Fly viewing screen for this narrow use case: the goggles connect directly to an Android device over USB, and the application displays the received H.264 video locally.
+DJI Unchained VOC is an unofficial Android receiver for the wired live-view output of **DJI Goggles N3** with **DJI O4 Air Unit Pro** or **DJI Avata 2**. The goggles connect directly to Android over USB and the app decodes the received H.264 video locally.
 
-The application does not control the aircraft. It has no flight controls, activation workflow, firmware updater, DJI account integration, or cloud connection. It requests no Internet, location, camera, microphone, account, contacts, or broad storage permission.
+It does not control the aircraft and has no activation workflow, firmware updater, DJI account integration or cloud connection. This project is not affiliated with, endorsed by or supported by DJI.
 
-## Development approach
+## Current version
 
-This project was built through **vibe coding**: iterative AI-assisted development directed by user requirements, reverse-engineering research, automated tests, and real hardware feedback. The original v0.1 stream path was confirmed on physical hardware, but the project remains alpha-quality and should be independently reviewed before use.
+The repository root contains **v0.7.2**, the current development release.
 
-This repository is not affiliated with, endorsed by, or supported by DJI.
-
-## Repository layout
-
-- The repository root remains the hardware-proven non-GUI line: **v0.5.0**.
-- [`versions/`](versions/) contains clean, standalone source snapshots from **v0.1.0 through v0.6.0**.
-- **v0.6.0** is an explicitly experimental DJI Unchained VOC preview. It adds aspect selection, a centered 9:16 Shorts crop/preview, experimental 720×1280 MP4 capture, and the supplied offline artwork/icon while preserving the proven USB/H.264 path.
+- **v0.7.1** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
+- **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
+- [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.2.
+- Installable APKs, checksum manifests and source ZIPs are attached to the matching GitHub prereleases.
 
 ## Hardware test gallery
 
-These are unedited screenshots supplied from the Android 16 hardware test of the v0.7.1 debug development build. They show the disconnected artwork, responsive controls, diagnostics, active Goggles N3 feed and 9:16 Shorts mode. The published source currently remains at v0.6.0 while the v0.7.x development line is being prepared for release.
+These unedited screenshots were supplied from the Android 16 hardware test of the v0.7.1 debug build.
 
 | Disconnected screen | Ready controls | Advanced diagnostics |
 |---|---|---|
@@ -38,95 +35,89 @@ These are unedited screenshots supplied from the Android 16 hardware test of the
 
 Earlier v0.5.0 proof videos remain available for the [phone workflow](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-phone-live-view-and-recording.mp4) and [recorded goggles feed](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-recorded-goggles-feed.mp4). The public copies have audio and media metadata removed for privacy.
 
-Experimental, privacy-minimal Android receiver for the wired live-view output of DJI Goggles N3 with DJI O4 Air Unit Pro or DJI Avata 2.
+## Features
 
-## Privacy properties
+- Android Open Accessory discovery and explicit USB permission flow.
+- Exact published N3/O4 subscription packets with conservative keepalive handling.
+- Incremental `logiclink` framing and extraction of H.264 video on port `0x574a`.
+- Hardware H.264 decode to a full-screen `SurfaceView`.
+- **FIT**, **FILL** and **STRETCH** display behavior.
+- Source-aspect selection for **AUTO**, **16:9** and **4:3**.
+- Center-positionable **9:16 Shorts** crop and experimental 720×1280 MP4 recording.
+- **30/60 FPS** Shorts selection with actual output-FPS diagnostics.
+- Default lossless original-stream MP4 remuxing with monotonic timestamps.
+- Optional raw Annex-B H.264 recording for troubleshooting and compatibility.
+- Original recording begins only after valid dimensions, SPS, PPS and an IDR keyframe.
+- Original files save locally to `Movies/DJI Unchained VOC` without leaving the app.
+- Bounded recording queues keep slow storage from blocking USB reception or decoding.
+- Automatic reconnect, staged stream recovery and manual **Recover now**.
+- Responsive bottom control tray, top disconnected artwork and launcher icon.
+- Privacy-filtered diagnostic schema 3 export with stream, decoder, recovery and recorder metrics.
+
+## Privacy
 
 - No `INTERNET` permission.
-- No location, microphone, camera, account, contacts or broad storage permissions.
+- No location, camera, microphone, account, contacts or broad-storage permission.
 - No analytics, advertising, telemetry, crash-reporting SDK or updater.
-- USB data is decoded locally and displayed through Android `MediaCodec`.
-- Root is not requested or used.
+- USB video, recordings, artwork, preferences and diagnostics remain local.
+- Root is not requested or required.
+- MediaProjection permission is requested only when starting a Shorts recording.
 
-## Current status
+## Recording
 
-The original 0.1 implementation has been hardware-confirmed on Goggles N3 with DJI O4 Air Unit Pro / DJI Avata 2 and an Android 16 LineageOS phone. Later versions preserve that exact USB/protocol path. Version 0.5 adds permission-free local raw H.264 recording. Version 0.6 adds an experimental branded UI and Shorts workflow; it is published as a pre-release and is not promoted as the stable line.
+### Original incoming stream
 
-Implemented:
+1. Connect the goggles and wait for `USB ✓ VIDEO ✓`.
+2. Select `Output: Original stream`.
+3. Choose `Original format: Lossless MP4` or `Raw H.264` in Advanced settings.
+4. Tap **Record original stream** and later **Stop and save**.
 
-- Android Open Accessory discovery and user permission flow.
-- Runtime display of the accessory identity strings.
-- Exact two captured N3/O4 video-start packets, repeated every five seconds.
-- Incremental N3 `logiclink` parser (`55 cc`, 16-bit port, 16-bit payload length, two zero bytes).
-- Extraction of H.264 on port `0x574a`.
-- Annex-B NAL/access-unit assembly across arbitrary USB boundaries.
-- Hardware H.264 decode to a full-screen `SurfaceView`.
-- Correct-aspect **FIT**, crop-to-screen **FILL**, and legacy **STRETCH** display modes.
-- Tap the video to hide or show the control panel.
-- One-second local bitrate and rendered-FPS measurements, plus packet, decoder-drop and resynchronization counters.
-- Optional automatic connection when the known DJI accessory is attached or the app opens.
-- Automatic recovery after USB read/write or accessory-open failures, using a capped 1/2/5/10-second retry sequence.
-- Explicit disconnected, permission, connecting, connected, streaming and retry-wait states.
-- Manual disconnect cancels queued retries; **Connect** immediately resets the retry sequence.
-- Stream-health display with last-packet age, last-rendered-frame age and recovery-action count.
-- Eight-second startup grace followed by conservative staged stall recovery: resend keepalive, reset local decoder, then reopen USB.
-- Automatic stall recovery runs only while **Auto reconnect** is enabled and a display surface is active.
-- **Recover now** performs an explicit USB reopen without requiring automatic recovery.
-- Local diagnostics export through Android's user-selected document picker, with no storage permission.
-- User-selected local `.h264` recording with no storage permission, re-encoding or quality loss.
-- Recording begins only after cached SPS/PPS and an IDR keyframe are available.
-- Dedicated bounded writer queue prevents slow storage from blocking USB reception or live decoding.
-- Recording duration, bytes, access-unit count, overload and write-error status.
-- Safe recording finalization on manual stop, USB reset, recovery or application close.
-- Persistent display-mode and automatic-connection preferences.
-- Unit tests for fragmented framing, resynchronization, control-packet integrity and H.264 access-unit assembly.
-- Unit tests for all three display geometries and their mode cycle.
-- Unit tests for retry progression, cap and reset behavior.
-- Unit tests for watchdog timing, opt-in/surface gates, recovery cancellation and counter-reset escalation.
-- Unit tests for keyframe gating, SPS/PPS prefixing, duplicate avoidance, empty cancellation, storage failure and queue overload.
-- Stream-state reset on reconnect and safe decoder restart when SPS/PPS changes.
-- Hardware-decoder fallback if the Android codec rejects low-latency mode.
-- Refusal to send N3 packets to accessories that do not identify as DJI or `logiclink`.
+The MP4 path remuxes the incoming compressed stream without re-encoding. Raw H.264 has no container timestamps, so some players may guess the wrong playback speed.
+
+### 9:16 Shorts
+
+1. Select `Output: 9:16 Shorts` and rotate Android to portrait.
+2. Drag the image horizontally to position the crop.
+3. Select **Record FPS: 30** or **Record FPS: 60**.
+4. Tap **Record Shorts MP4**, choose a destination and approve Android's screen-capture prompt.
+
+The selected frame rate is a maximum; actual FPS depends on the incoming feed, decoder, encoder and device load.
 
 ## Bench-test order
 
 1. Remove propellers and provide cooling/airflow where required.
-2. Activate and link the aircraft/Air Unit normally; verify video in Goggles N3.
+2. Activate and link the aircraft or Air Unit normally; verify video in Goggles N3.
 3. Install and open DJI Unchained VOC.
-4. Connect a known-good USB-C data cable from N3 to the phone.
-5. Note the accessory identity shown by the app and press **Connect**. Enable **Auto reconnect** only if desired.
-6. Use **Display: FIT** for the correct full-frame aspect ratio. **FILL** crops the edges to occupy the screen; **STRETCH** reproduces the original full-screen behavior.
-7. If video packets remain zero, capture the displayed identity and `adb logcat -s N3LocalView` output. The app deliberately omits the accessory serial number from both. Do not repeatedly change USB roles while the aircraft is armed.
-
-The app sends only the two published camera/app subscription packets. It contains no flight-control UI or exploratory DUML commands.
+4. Connect a known-good USB-C data cable from N3 to the Android device.
+5. Approve USB access and press **Connect** if automatic connection is disabled.
+6. Verify live video before testing recording or recovery behavior.
+7. Export diagnostics if a failure is repeatable; review the file before sharing it publicly.
 
 ## Build
 
-The project targets Android API 36 and Java 17. With an Android SDK and Gradle wrapper installed:
+The project targets Android API 36 and Java 17:
 
-```text
-./gradlew clean testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease
+```powershell
+.\gradlew.bat clean testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease
 ```
 
-To independently compare the embedded control bytes with the pinned upstream checkout:
+The debug application ID is `local.n3view.voc.debug`; release builds use `local.n3view.voc`. Release APKs are intentionally unsigned.
+
+To compare the embedded control bytes against the pinned upstream checkout:
 
 ```text
 python tools/verify_protocol.py /path/to/dji_protocol
 ```
 
-The ready-to-install debug APK is `output/apk/N3-Local-View-0.5.0-debug.apk`. The release APK is unsigned by design; sign it with a private key you control after testing.
+See [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
 
-Raw recordings can be played directly in VLC or remuxed without re-encoding:
+## Development approach
 
-```text
-ffmpeg -i n3-recording.h264 -c copy n3-recording.mp4
-```
-
-Each published version has a standalone source snapshot under [`versions/`](versions/). Installable APKs and checksum manifests are attached to the matching GitHub release.
+This project was built through **vibe coding**: iterative AI-assisted development directed by user requirements, reverse-engineering research, automated tests and physical hardware feedback. Independent source review is strongly encouraged.
 
 ## Protocol basis
 
-The N3 mobile framing and control packets are pinned to the reverse-engineering documentation and executable reference at commit `50c71b65fdb6825783f724e5cd3c1f09c2aa88ce`:
+The mobile framing and N3 control packets are pinned to `samuelsadok/dji_protocol` commit `50c71b65fdb6825783f724e5cd3c1f09c2aa88ce`:
 
 - https://github.com/samuelsadok/dji_protocol/blob/50c71b65fdb6825783f724e5cd3c1f09c2aa88ce/usb_mobile_protocol.md
 - https://github.com/samuelsadok/dji_protocol/blob/50c71b65fdb6825783f724e5cd3c1f09c2aa88ce/scripts/video_out_mobile.py
