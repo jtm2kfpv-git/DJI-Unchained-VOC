@@ -2,7 +2,6 @@ package local.n3view.voc;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,9 +19,7 @@ import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.SystemClock;
-import android.os.Environment;
 import android.os.storage.StorageManager;
-import android.provider.MediaStore;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.system.StructStatVfs;
@@ -55,7 +52,7 @@ import local.n3view.voc.protocol.H264AnnexBAssembler;
 public final class MainActivity extends Activity implements
         UsbAccessoryController.Listener,
         AvcSurfaceDecoder.Listener,
-        OriginalStreamRecorder.Listener,
+        H264Recorder.Listener,
         SurfaceHolder.Callback {
 
     private static final String TAG = "N3LocalView";
@@ -67,8 +64,8 @@ public final class MainActivity extends Activity implements
     private static final String PREF_SHORTS_CROP = "shorts_crop";
     private static final String PREF_OUTPUT_FORMAT = "output_format";
     private static final String PREF_CAPTURE_FPS = "capture_fps";
-    private static final String PREF_ORIGINAL_CONTAINER = "original_container";
     private static final int CREATE_DIAGNOSTICS_REQUEST = 40;
+    private static final int CREATE_RECORDING_REQUEST = 41;
     private static final int CREATE_SHORTS_REQUEST = 42;
     private static final int SCREEN_CAPTURE_REQUEST = 43;
 
@@ -94,11 +91,10 @@ public final class MainActivity extends Activity implements
     private Button advancedButton;
     private Button autoReconnectButton;
     private Button keepAwakeButton;
-    private Button originalContainerButton;
     private Button recordingButton;
     private UsbAccessoryController usb;
     private AvcSurfaceDecoder videoDecoder;
-    private OriginalStreamRecorder recorder;
+    private H264Recorder recorder;
     private final H264AnnexBAssembler assembler = new H264AnnexBAssembler();
     private final StreamWatchdog watchdog = new StreamWatchdog();
     private final DiagnosticTimeline timeline =
@@ -109,7 +105,6 @@ public final class MainActivity extends Activity implements
     private volatile DisplayGeometry.SourceAspect sourceAspect;
     private volatile CaptureProfile.OutputFormat outputFormat;
     private volatile CaptureProfile.FrameRate captureFrameRate;
-    private volatile OriginalStreamRecorder.Container originalContainer;
     private volatile boolean autoReconnect;
     private volatile boolean keepAwake;
     private volatile float shortsCrop;
@@ -136,9 +131,7 @@ public final class MainActivity extends Activity implements
     private volatile int keepaliveResendCount;
     private volatile int decoderResetCount;
     private volatile int usbReopenCount;
-    private volatile int surfaceLossesWhileRecording;
-    private volatile OriginalStreamRecorder.State lastRecordedTimelineState =
-            OriginalStreamRecorder.State.IDLE;
+    private volatile H264Recorder.State lastRecordedTimelineState = H264Recorder.State.IDLE;
     private final long sessionStartedAt = SystemClock.elapsedRealtime();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final Runnable backdropWatch = new Runnable() {
@@ -159,11 +152,8 @@ public final class MainActivity extends Activity implements
     private volatile String lastIdentity = "No Android USB accessory detected";
     private volatile String lastStatus = "Ready";
     private volatile String lastStats = "No video packets yet";
-    private volatile OriginalStreamRecorder.Snapshot recordingSnapshot =
-            new OriginalStreamRecorder.Snapshot(
-                    OriginalStreamRecorder.State.IDLE,
-                    OriginalStreamRecorder.Container.LOSSLESS_MP4,
-                    0, 0, 0, 0, -1, -1, 0, 0, "Not recording");
+    private volatile H264Recorder.Snapshot recordingSnapshot = new H264Recorder.Snapshot(
+            H264Recorder.State.IDLE, 0, 0, 0, 0, "Not recording");
     private volatile boolean destroyed;
     private Uri pendingShortsUri;
 
@@ -175,13 +165,11 @@ public final class MainActivity extends Activity implements
         sourceAspect = readSourceAspect(preferences.getString(PREF_SOURCE_ASPECT, null));
         outputFormat = readOutputFormat(preferences.getString(PREF_OUTPUT_FORMAT, null));
         captureFrameRate = readCaptureFrameRate(preferences.getString(PREF_CAPTURE_FPS, null));
-        originalContainer = readOriginalContainer(
-                preferences.getString(PREF_ORIGINAL_CONTAINER, null));
         autoReconnect = preferences.getBoolean(PREF_AUTO_RECONNECT, false);
         keepAwake = preferences.getBoolean(PREF_KEEP_AWAKE, true);
         shortsCrop = preferences.getFloat(PREF_SHORTS_CROP, 0f);
         applyKeepAwake();
-        recorder = new OriginalStreamRecorder(getContentResolver(), this);
+        recorder = new H264Recorder(this);
         timeline.add("app", "created " + BuildConfig.VERSION_NAME);
 
         buildUi();
@@ -235,6 +223,9 @@ public final class MainActivity extends Activity implements
         if (requestCode == CREATE_DIAGNOSTICS_REQUEST
                 && resultCode == RESULT_OK && data != null && data.getData() != null) {
             writeDiagnostics(data.getData());
+        } else if (requestCode == CREATE_RECORDING_REQUEST
+                && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            startRecording(data.getData());
         } else if (requestCode == CREATE_SHORTS_REQUEST
                 && resultCode == RESULT_OK && data != null && data.getData() != null) {
             pendingShortsUri = data.getData();
@@ -298,11 +289,6 @@ public final class MainActivity extends Activity implements
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         surfaceReady = false;
-        if (recorder != null && recorder.snapshot().active()) {
-            surfaceLossesWhileRecording++;
-            timeline.add("surface", "destroyed during original recording #"
-                    + surfaceLossesWhileRecording);
-        }
         timeline.add("surface", "destroyed");
         videoDecoder.clearSurface();
     }
@@ -385,16 +371,16 @@ public final class MainActivity extends Activity implements
     }
 
     @Override
-    public void onRecordingChanged(OriginalStreamRecorder.Snapshot snapshot) {
+    public void onRecordingChanged(H264Recorder.Snapshot snapshot) {
         recordingSnapshot = snapshot;
         if (snapshot.state() != lastRecordedTimelineState) {
             lastRecordedTimelineState = snapshot.state();
-            timeline.add("original_recording", snapshot.state() + ": " + snapshot.message());
+            timeline.add("raw_recording", snapshot.state() + ": " + snapshot.message());
         }
         if (destroyed) {
             return;
         }
-        if (snapshot.state() == OriginalStreamRecorder.State.ERROR) {
+        if (snapshot.state() == H264Recorder.State.ERROR) {
             onStatus(snapshot.message());
         }
         runOnUiThread(() -> updateRecordingUi(snapshot));
@@ -502,7 +488,6 @@ public final class MainActivity extends Activity implements
                 oldLeft, oldTop, oldRight, oldBottom) -> {
             updateSurfaceLayout();
             updateControlPanelLayout();
-            updateBackdropLayout();
         });
 
         videoViewport = new FrameLayout(this);
@@ -538,7 +523,7 @@ public final class MainActivity extends Activity implements
         root.addView(logoBackdrop, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+                Gravity.CENTER));
 
         controlScroll = new ScrollView(this);
         controlScroll.setFillViewport(false);
@@ -638,17 +623,6 @@ public final class MainActivity extends Activity implements
         configureControlButton(exportDiagnostics);
         exportDiagnostics.setOnClickListener(view -> requestDiagnosticsExport());
         advancedPanel.addView(exportDiagnostics);
-
-        originalContainerButton = new Button(this);
-        configureControlButton(originalContainerButton);
-        originalContainerButton.setOnClickListener(view -> {
-            originalContainer = originalContainer.next();
-            preferences.edit().putString(
-                    PREF_ORIGINAL_CONTAINER, originalContainer.name()).apply();
-            timeline.add("control", "original container=" + originalContainer);
-            updateOptionButtons();
-        });
-        advancedPanel.addView(originalContainerButton);
 
         LinearLayout optionButtons = new LinearLayout(this);
         optionButtons.setOrientation(LinearLayout.HORIZONTAL);
@@ -759,12 +733,9 @@ public final class MainActivity extends Activity implements
         aspectButton.setText(getString(R.string.source_aspect, sourceAspect.label()));
         outputFormatButton.setText(getString(
                 R.string.output_format, outputFormat.label()));
+        frameRateButton.setText(getString(
+                R.string.capture_fps, captureFrameRate.framesPerSecond()));
         boolean shorts = outputFormat == CaptureProfile.OutputFormat.SHORTS_9_16;
-        frameRateButton.setText(shorts
-                ? getString(R.string.capture_fps, captureFrameRate.framesPerSecond())
-                : getString(R.string.source_fps));
-        originalContainerButton.setText(getString(
-                R.string.original_container, originalContainer.label()));
         outputFormatButton.setBackgroundTintList(ColorStateList.valueOf(
                 shorts ? 0xFF6A1B9A : 0xFF176B64));
         updateRecordingControlLock();
@@ -777,8 +748,7 @@ public final class MainActivity extends Activity implements
 
     private void updateRecordingControlLock() {
         if (displayModeButton == null || aspectButton == null || outputFormatButton == null
-                || frameRateButton == null || originalContainerButton == null
-                || recordingButton == null) {
+                || frameRateButton == null || recordingButton == null) {
             return;
         }
         boolean shorts = outputFormat == CaptureProfile.OutputFormat.SHORTS_9_16;
@@ -787,7 +757,6 @@ public final class MainActivity extends Activity implements
         aspectButton.setEnabled(!recordingLocked);
         outputFormatButton.setEnabled(!recordingLocked);
         frameRateButton.setEnabled(shorts && !recordingLocked);
-        originalContainerButton.setEnabled(!shorts && !recordingLocked);
         recordingButton.setBackgroundTintList(ColorStateList.valueOf(
                 recordingLocked ? 0xFFC62828 : 0xFF176B64));
     }
@@ -823,20 +792,6 @@ public final class MainActivity extends Activity implements
                 ? Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
                 : Gravity.BOTTOM | Gravity.START;
         controlScroll.setLayoutParams(params);
-    }
-
-    private void updateBackdropLayout() {
-        if (root == null || logoBackdrop == null
-                || root.getWidth() <= 0 || root.getHeight() <= 0) {
-            return;
-        }
-        FrameLayout.LayoutParams params =
-                (FrameLayout.LayoutParams) logoBackdrop.getLayoutParams();
-        params.width = FrameLayout.LayoutParams.MATCH_PARENT;
-        params.height = BackdropGeometry.topArtworkHeight(
-                root.getWidth(), root.getHeight());
-        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        logoBackdrop.setLayoutParams(params);
     }
 
     private void configureControlButton(Button button) {
@@ -899,12 +854,16 @@ public final class MainActivity extends Activity implements
             toggleShortsCapture();
             return;
         }
-        OriginalStreamRecorder.Snapshot snapshot = recorder.snapshot();
+        H264Recorder.Snapshot snapshot = recorder.snapshot();
         if (snapshot.active()) {
             recorder.stop("Stopped by user");
             return;
         }
-        startRecording();
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("video/h264")
+                .putExtra(Intent.EXTRA_TITLE, recordingFileName());
+        startActivityForResult(intent, CREATE_RECORDING_REQUEST);
     }
 
     private void toggleShortsCapture() {
@@ -977,63 +936,29 @@ public final class MainActivity extends Activity implements
         updateRecordingControlLock();
     }
 
-    private void startRecording() {
-        if (sourceWidth <= 0 || sourceHeight <= 0 || latestVideoPackets <= 0) {
-            onStatus("Original-stream recording needs an active video signal");
-            return;
-        }
-        if (allocatableBytes() < 500L * 1024 * 1024) {
-            onStatus("Original-stream recording blocked: less than 500 MB usable storage");
-            return;
-        }
-        Uri uri = null;
+    private void startRecording(Uri uri) {
         try {
-            uri = createOriginalRecordingDestination();
-            if (uri == null) {
-                onStatus("Could not create the recording in Movies/DJI Unchained VOC");
+            selectedDestinationAvailableBytes = destinationAvailableBytes(uri);
+            timeline.add("storage", "selected raw destination available_bytes="
+                    + selectedDestinationAvailableBytes);
+            OutputStream output = getContentResolver().openOutputStream(uri, "rwt");
+            if (output == null) {
+                onStatus("Could not open the selected recording file");
                 return;
             }
-            selectedDestinationAvailableBytes = destinationAvailableBytes(uri);
-            timeline.add("storage", "automatic original destination available_bytes="
-                    + selectedDestinationAvailableBytes);
-            if (!recorder.start(
-                    uri,
-                    originalContainer,
-                    sourceWidth,
-                    sourceHeight)) {
-                getContentResolver().delete(uri, null, null);
+            if (!recorder.start(output)) {
+                output.close();
                 onStatus("Recorder is still closing the previous file");
             } else {
-                timeline.add("original_recording",
-                        "original incoming stream armed as " + originalContainer);
+                timeline.add("raw_recording", "original incoming stream armed");
                 onStatus("Recording armed; waiting for the next H.264 keyframe");
             }
-        } catch (RuntimeException error) {
-            if (uri != null) {
-                try {
-                    getContentResolver().delete(uri, null, null);
-                } catch (RuntimeException ignored) {
-                    // The original failure is reported below.
-                }
-            }
+        } catch (IOException error) {
             onFailure("Could not create recording", error);
         }
     }
 
-    private Uri createOriginalRecordingDestination() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Video.Media.DISPLAY_NAME,
-                recordingFileName(originalContainer));
-        values.put(MediaStore.Video.Media.MIME_TYPE, originalContainer.mimeType());
-        values.put(MediaStore.Video.Media.RELATIVE_PATH,
-                Environment.DIRECTORY_MOVIES + "/DJI Unchained VOC");
-        values.put(MediaStore.Video.Media.IS_PENDING, 1);
-        Uri collection = MediaStore.Video.Media.getContentUri(
-                MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        return getContentResolver().insert(collection, values);
-    }
-
-    private void updateRecordingUi(OriginalStreamRecorder.Snapshot snapshot) {
+    private void updateRecordingUi(H264Recorder.Snapshot snapshot) {
         recordingSnapshot = snapshot;
         long elapsedMillis = snapshot.startedAtMillis() == 0
                 ? 0
@@ -1047,10 +972,9 @@ public final class MainActivity extends Activity implements
             }
             case RECORDING -> {
                 value = String.format(Locale.ROOT,
-                         "● REC %s  %s  %.1f MB  access units=%d",
-                         formatDuration(elapsedMillis),
-                         snapshot.container().label(),
-                         snapshot.bytesWritten() / 1_000_000.0,
+                        "● REC %s  %.1f MB  access units=%d",
+                        formatDuration(elapsedMillis),
+                        snapshot.bytesWritten() / 1_000_000.0,
                         snapshot.accessUnitsWritten());
                 color = 0xFFFF5252;
             }
@@ -1106,7 +1030,7 @@ public final class MainActivity extends Activity implements
 
     private String buildDiagnostics() {
         StreamWatchdog.Evaluation health = latestHealth;
-        OriginalStreamRecorder.Snapshot recording = recordingSnapshot;
+        H264Recorder.Snapshot recording = recordingSnapshot;
         ShortsCaptureService.Snapshot shorts = ShortsCaptureService.snapshot();
         PerformanceTracker.Snapshot performance = performanceTracker.snapshot();
         BatteryManager battery = getSystemService(BatteryManager.class);
@@ -1121,7 +1045,7 @@ public final class MainActivity extends Activity implements
                 == Configuration.ORIENTATION_PORTRAIT ? "PORTRAIT" : "LANDSCAPE";
 
         return "DJI Unchained VOC " + BuildConfig.VERSION_NAME + " diagnostics\n"
-                + "diagnostic_schema=3\n"
+                + "diagnostic_schema=2\n"
                 + "generated=" + Instant.now() + "\n"
                 + "application_id=" + BuildConfig.APPLICATION_ID + "\n"
                 + "debug_build=" + BuildConfig.DEBUG + "\n"
@@ -1164,7 +1088,6 @@ public final class MainActivity extends Activity implements
                 + "source_aspect=" + sourceAspect + "\n"
                 + "output_format=" + outputFormat + "\n"
                 + "capture_fps=" + captureFrameRate.framesPerSecond() + "\n"
-                + "original_container=" + originalContainer + "\n"
                 + "shorts_crop=" + decimal(shortsCrop) + "\n"
                 + "keep_awake=" + keepAwake + "\n"
                 + "default_allocatable_bytes=" + allocatableBytes() + "\n"
@@ -1180,30 +1103,15 @@ public final class MainActivity extends Activity implements
                 + "memory_threshold_bytes=" + memory.threshold + "\n"
                 + "app_heap_used_bytes="
                 + (runtime.totalMemory() - runtime.freeMemory()) + "\n"
-                + "original_recording_state=" + recording.state() + "\n"
-                + "original_recording_container=" + recording.container() + "\n"
-                + "original_recording_bytes=" + recording.bytesWritten() + "\n"
-                + "original_recording_access_units=" + recording.accessUnitsWritten() + "\n"
-                + "original_recording_dropped_units=" + recording.droppedUnits() + "\n"
-                + "original_recording_first_pts_us=" + recording.firstPresentationUs() + "\n"
-                + "original_recording_last_pts_us=" + recording.lastPresentationUs() + "\n"
-                + "original_recording_timestamp_corrections="
-                + recording.timestampCorrections() + "\n"
-                + "original_recording_actual_fps="
-                + decimal(recording.actualFramesPerSecond()) + "\n"
-                + "surface_losses_while_original_recording="
-                + surfaceLossesWhileRecording + "\n"
-                + "original_recording_message=" + recording.message() + "\n"
+                + "raw_recording_state=" + recording.state() + "\n"
+                + "raw_recording_bytes=" + recording.bytesWritten() + "\n"
+                + "raw_recording_access_units=" + recording.accessUnitsWritten() + "\n"
+                + "raw_recording_dropped_units=" + recording.droppedUnits() + "\n"
+                + "raw_recording_message=" + recording.message() + "\n"
                 + "shorts_recording_state=" + shorts.state() + "\n"
                 + "shorts_recording_message=" + shorts.message() + "\n"
                 + "shorts_recording_size=" + shorts.width() + "x" + shorts.height() + "\n"
                 + "shorts_recording_fps=" + shorts.fps() + "\n"
-                + "shorts_recording_actual_fps=" + decimal(shorts.actualFps()) + "\n"
-                + "shorts_recording_encoded_frames=" + shorts.encodedFrames() + "\n"
-                + "shorts_recording_first_pts_us=" + shorts.firstPresentationUs() + "\n"
-                + "shorts_recording_last_pts_us=" + shorts.lastPresentationUs() + "\n"
-                + "shorts_recording_timestamp_corrections="
-                + shorts.timestampCorrections() + "\n"
                 + "shorts_recording_started_at_ms=" + shorts.startedAtMillis() + "\n"
                 + "timeline_events=" + timeline.snapshot().size() + "\n"
                 + "privacy=no serial, account, location, IP, MAC, network history, URI, or path collected\n"
@@ -1348,12 +1256,10 @@ public final class MainActivity extends Activity implements
         }
     }
 
-    private String recordingFileName(OriginalStreamRecorder.Container container) {
+    private String recordingFileName() {
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", Locale.ROOT)
                 .withZone(ZoneId.systemDefault()).format(Instant.now());
-        String extension = container == OriginalStreamRecorder.Container.LOSSLESS_MP4
-                ? ".mp4" : ".h264";
-        return "dji-unchained-voc-original-stream-" + timestamp + extension;
+        return "dji-unchained-voc-original-stream-" + timestamp + ".h264";
     }
 
     private String shortsFileName() {
@@ -1409,17 +1315,6 @@ public final class MainActivity extends Activity implements
             return CaptureProfile.FrameRate.valueOf(stored);
         } catch (IllegalArgumentException ignored) {
             return CaptureProfile.FrameRate.FPS_30;
-        }
-    }
-
-    private static OriginalStreamRecorder.Container readOriginalContainer(String stored) {
-        if (stored == null) {
-            return OriginalStreamRecorder.Container.LOSSLESS_MP4;
-        }
-        try {
-            return OriginalStreamRecorder.Container.valueOf(stored);
-        } catch (IllegalArgumentException ignored) {
-            return OriginalStreamRecorder.Container.LOSSLESS_MP4;
         }
     }
 

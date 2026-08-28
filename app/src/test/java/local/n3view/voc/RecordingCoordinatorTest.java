@@ -11,9 +11,9 @@ public final class RecordingCoordinatorTest {
     public void onlyOneRecorderCanOwnThePipeline() {
         RecordingCoordinator coordinator = new RecordingCoordinator(snapshot -> { });
 
-        assertTrue(coordinator.requestStart(RecordingCoordinator.Kind.ORIGINAL_STREAM_MP4));
+        assertTrue(coordinator.requestStart(RecordingCoordinator.Kind.RAW_H264));
         assertFalse(coordinator.requestStart(RecordingCoordinator.Kind.SHORTS_MP4));
-        assertTrue(coordinator.markActive(RecordingCoordinator.Kind.ORIGINAL_STREAM_MP4));
+        assertTrue(coordinator.markActive(RecordingCoordinator.Kind.RAW_H264));
         assertTrue(coordinator.snapshot().controlsLocked());
     }
 

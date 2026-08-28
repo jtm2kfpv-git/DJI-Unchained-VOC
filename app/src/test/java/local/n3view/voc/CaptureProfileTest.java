@@ -10,18 +10,19 @@ import org.junit.Test;
 public final class CaptureProfileTest {
     @Test
     public void shortsProfileIsPortraitAndKeepsSelectedFrameRate() {
-        CaptureProfile profile = CaptureProfile.shorts(CaptureProfile.FrameRate.FPS_60, 0.25f);
+        CaptureProfile profile = CaptureProfile.shorts(CaptureProfile.FrameRate.FPS_50, 0.25f);
 
         assertEquals(CaptureProfile.OutputFormat.SHORTS_9_16, profile.outputFormat());
         assertEquals(720, profile.width());
         assertEquals(1280, profile.height());
-        assertEquals(60, profile.frameRate().framesPerSecond());
+        assertEquals(50, profile.frameRate().framesPerSecond());
         assertEquals(0.25f, profile.horizontalCrop(), 0.0001f);
     }
 
     @Test
-    public void frameRatesToggleBetweenThirtyAndSixty() {
-        assertEquals(CaptureProfile.FrameRate.FPS_60, CaptureProfile.FrameRate.FPS_30.next());
+    public void frameRatesCycleThroughThirtyFiftyAndSixty() {
+        assertEquals(CaptureProfile.FrameRate.FPS_50, CaptureProfile.FrameRate.FPS_30.next());
+        assertEquals(CaptureProfile.FrameRate.FPS_60, CaptureProfile.FrameRate.FPS_50.next());
         assertEquals(CaptureProfile.FrameRate.FPS_30, CaptureProfile.FrameRate.FPS_60.next());
     }
 

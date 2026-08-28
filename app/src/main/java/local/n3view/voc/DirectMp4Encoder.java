@@ -19,11 +19,10 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * Surface-fed H.264/MP4 encoder used by the v0.7 Shorts capture path.
+ * Surface-fed H.264/MP4 encoder for the direct v0.7 render pipeline.
  *
- * <p>The caller supplies frames through {@link #inputSurface()}. The encoder itself is
- * independent of the producer; v0.7.2 currently connects a consent-gated MediaProjection
- * virtual display, while the planned direct GPU crop can use the same input surface later.</p>
+ * <p>The GPU renderer will draw only the selected video crop into {@link #inputSurface()}.
+ * This class deliberately has no dependency on MediaProjection or the activity window.</p>
  */
 public final class DirectMp4Encoder implements AutoCloseable {
     private static final String MIME = MediaFormat.MIMETYPE_VIDEO_AVC;
@@ -51,14 +50,10 @@ public final class DirectMp4Encoder implements AutoCloseable {
     private Surface inputSurface;
     private Thread drainThread;
     private volatile boolean stopRequested;
-    private volatile boolean discardOutput;
     private volatile boolean started;
     private volatile boolean completed;
     private volatile long startedAtMillis;
     private volatile long encodedBytes;
-    private volatile long encodedFrames;
-    private final MonotonicPresentationTimeline presentationTimeline =
-            new MonotonicPresentationTimeline();
 
     public DirectMp4Encoder(
             ContentResolver resolver,
@@ -95,9 +90,6 @@ public final class DirectMp4Encoder implements AutoCloseable {
             format.setInteger(MediaFormat.KEY_BIT_RATE, 10_000_000);
             format.setInteger(MediaFormat.KEY_FRAME_RATE,
                     profile.frameRate().framesPerSecond());
-            format.setFloat(MediaFormat.KEY_MAX_FPS_TO_ENCODER,
-                    profile.frameRate().framesPerSecond());
-            format.setInteger(MediaFormat.KEY_MAX_B_FRAMES, 0);
             format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
 
             codec = MediaCodec.createEncoderByType(MIME);
@@ -137,33 +129,8 @@ public final class DirectMp4Encoder implements AutoCloseable {
         }
     }
 
-    public synchronized void cancel() {
-        discardOutput = true;
-        stopSafely();
-    }
-
     public boolean isStarted() {
         return started;
-    }
-
-    public long encodedFrames() {
-        return encodedFrames;
-    }
-
-    public long timestampCorrections() {
-        return presentationTimeline.corrections();
-    }
-
-    public long firstPresentationUs() {
-        return encodedFrames == 0 ? -1 : 0;
-    }
-
-    public long lastPresentationUs() {
-        return presentationTimeline.lastPresentationUs();
-    }
-
-    public double actualFramesPerSecond() {
-        return presentationTimeline.actualFramesPerSecond();
     }
 
     private void drainLoop() {
@@ -197,10 +164,8 @@ public final class DirectMp4Encoder implements AutoCloseable {
                         }
                         output.position(info.offset);
                         output.limit(info.offset + info.size);
-                        sanitizePresentationTime(info);
                         muxer.writeSampleData(0, output, info);
                         encodedBytes += info.size;
-                        encodedFrames++;
                     }
                     boolean endOfStream = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
                     codec.releaseOutputBuffer(outputIndex, false);
@@ -218,14 +183,6 @@ public final class DirectMp4Encoder implements AutoCloseable {
                         stopSafely();
                     }
                     if (endOfStream) {
-                        if (discardOutput) {
-                            completed = false;
-                            cleanup(false);
-                            listener.onEncoderFailed(
-                                    "MP4 capture was canceled; incomplete output was removed",
-                                    new IOException("Capture canceled"));
-                            return;
-                        }
                         completed = true;
                         cleanup(true);
                         reportCompletion(elapsed, finishReason);
@@ -263,10 +220,8 @@ public final class DirectMp4Encoder implements AutoCloseable {
             if (info.size > 0 && !codecConfig) {
                 output.position(info.offset);
                 output.limit(info.offset + info.size);
-                sanitizePresentationTime(info);
                 muxer.writeSampleData(trackIndex, output, info);
                 encodedBytes += info.size;
-                encodedFrames++;
             }
             boolean endOfStream = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
             codec.releaseOutputBuffer(outputIndex, false);
@@ -284,14 +239,6 @@ public final class DirectMp4Encoder implements AutoCloseable {
                 stopSafely();
             }
             if (endOfStream) {
-                if (discardOutput) {
-                    completed = false;
-                    cleanup(false);
-                    listener.onEncoderFailed(
-                            "MP4 capture was canceled; incomplete output was removed",
-                            new IOException("Capture canceled"));
-                    return;
-                }
                 completed = true;
                 cleanup(true);
                 reportCompletion(elapsed, finishReason);
@@ -308,10 +255,6 @@ public final class DirectMp4Encoder implements AutoCloseable {
                     "MP4 could not be finalized; incomplete output was removed",
                     new IOException("MediaMuxer finalization failed"));
         }
-    }
-
-    private void sanitizePresentationTime(MediaCodec.BufferInfo info) {
-        info.presentationTimeUs = presentationTimeline.next(info.presentationTimeUs);
     }
 
     private static long availableBytes(ParcelFileDescriptor descriptor) {

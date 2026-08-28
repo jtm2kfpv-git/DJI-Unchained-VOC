@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
@@ -18,10 +19,10 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 
 import java.io.IOException;
-import java.util.Locale;
 
 /** Experimental, consent-gated 9:16 screen capture of the clipped Shorts viewport. */
 public final class ShortsCaptureService extends Service {
@@ -45,30 +46,15 @@ public final class ShortsCaptureService extends Service {
     private static volatile int currentHeight;
     private static volatile int currentFps;
     private static volatile long startedAtMillis;
-    private static volatile long currentEncodedFrames;
-    private static volatile double currentActualFps;
-    private static volatile long currentFirstPresentationUs = -1;
-    private static volatile long currentLastPresentationUs = -1;
-    private static volatile long currentTimestampCorrections;
 
-    record Snapshot(
-            State state,
-            String message,
-            int width,
-            int height,
-            int fps,
-            long startedAtMillis,
-            long encodedFrames,
-            double actualFps,
-            long firstPresentationUs,
-            long lastPresentationUs,
-            long timestampCorrections) {
+    record Snapshot(State state, String message, int width, int height, int fps,
+            long startedAtMillis) {
     }
 
-    private DirectMp4Encoder encoder;
+    private MediaRecorder recorder;
     private MediaProjection projection;
     private VirtualDisplay virtualDisplay;
-    private String requestedFinishMessage = "Shorts MP4 saved";
+    private ParcelFileDescriptor outputDescriptor;
 
     static Intent startIntent(Context context, int resultCode, Intent permissionData,
             Uri outputUri, int width, int height, int density, int fps) {
@@ -101,18 +87,8 @@ public final class ShortsCaptureService extends Service {
     }
 
     static Snapshot snapshot() {
-        return new Snapshot(
-                currentState,
-                currentMessage,
-                currentWidth,
-                currentHeight,
-                currentFps,
-                startedAtMillis,
-                currentEncodedFrames,
-                currentActualFps,
-                currentFirstPresentationUs,
-                currentLastPresentationUs,
-                currentTimestampCorrections);
+        return new Snapshot(currentState, currentMessage, currentWidth, currentHeight,
+                currentFps, startedAtMillis);
     }
 
     static void resetError() {
@@ -145,12 +121,15 @@ public final class ShortsCaptureService extends Service {
         }
         currentState = State.STARTING;
         currentMessage = "Preparing 9:16 Shorts recorder";
-        resetMetrics();
         startRecordingForeground();
         try {
             startCapture(intent);
         } catch (IOException | RuntimeException error) {
-            failCapture("Shorts recording failed: " + concise(error));
+            currentState = State.ERROR;
+            currentMessage = "Shorts recording failed: " + concise(error);
+            releaseCapture(false);
+            stopForeground(STOP_FOREGROUND_REMOVE);
+            stopSelf();
         }
         return START_NOT_STICKY;
     }
@@ -186,51 +165,26 @@ public final class ShortsCaptureService extends Service {
         int height = Math.max(640, intent.getIntExtra(EXTRA_HEIGHT, 1280));
         int density = Math.max(1, intent.getIntExtra(EXTRA_DENSITY, 320));
         int fps = intent.getIntExtra(EXTRA_FPS, 30);
-        if (fps != 30 && fps != 60) {
+        if (fps != 30 && fps != 50 && fps != 60) {
             throw new IOException("Unsupported Shorts frame rate: " + fps);
         }
         if (resultCode != Activity.RESULT_OK || permissionData == null) {
             throw new IOException("Missing screen-capture consent token");
         }
 
-        CaptureProfile.FrameRate frameRate = fps == 60
-                ? CaptureProfile.FrameRate.FPS_60 : CaptureProfile.FrameRate.FPS_30;
-        CaptureProfile profile = CaptureProfile.shorts(frameRate, 0f);
-        encoder = new DirectMp4Encoder(
-                getContentResolver(), outputUri, profile, new DirectMp4Encoder.Listener() {
-                    @Override
-                    public void onEncoderStarted(String codecName, CaptureProfile startedProfile) {
-                        currentMessage = "Starting Shorts encoder " + codecName;
-                    }
-
-                    @Override
-                    public void onEncoderProgress(long elapsedMillis, long encodedBytes) {
-                        updateEncoderMetrics();
-                        currentMessage = String.format(Locale.ROOT,
-                                "● REC SHORTS %dx%d @ %d fps  actual %.1f fps",
-                                currentWidth, currentHeight, currentFps, currentActualFps);
-                    }
-
-                    @Override
-                    public void onEncoderFinished(
-                            long elapsedMillis, long encodedBytes, String reason) {
-                        if (currentState == State.ERROR) {
-                            return;
-                        }
-                        updateEncoderMetrics();
-                        finishCapture(true, requestedFinishMessage);
-                    }
-
-                    @Override
-                    public void onEncoderFailed(String message, Throwable error) {
-                        if (currentState == State.ERROR) {
-                            return;
-                        }
-                        updateEncoderMetrics();
-                        failCapture(message + ": " + concise(error));
-                    }
-                });
-        encoder.start();
+        outputDescriptor = getContentResolver().openFileDescriptor(outputUri, "rwt");
+        if (outputDescriptor == null) {
+            throw new IOException("Could not open selected MP4 file");
+        }
+        recorder = Build.VERSION.SDK_INT >= 31 ? new MediaRecorder(this) : new MediaRecorder();
+        recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        recorder.setOutputFile(outputDescriptor.getFileDescriptor());
+        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        recorder.setVideoSize(width, height);
+        recorder.setVideoFrameRate(fps);
+        recorder.setVideoEncodingBitRate(10_000_000);
+        recorder.prepare();
 
         MediaProjectionManager manager = (MediaProjectionManager)
                 getSystemService(Context.MEDIA_PROJECTION_SERVICE);
@@ -247,11 +201,8 @@ public final class ShortsCaptureService extends Service {
         virtualDisplay = projection.createVirtualDisplay(
                 "N3ShortsCapture", width, height, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                encoder.inputSurface(), null, null);
-        if (virtualDisplay == null) {
-            throw new IOException("Android did not create the Shorts virtual display");
-        }
-
+                recorder.getSurface(), null, null);
+        recorder.start();
         currentWidth = width;
         currentHeight = height;
         currentFps = fps;
@@ -261,23 +212,12 @@ public final class ShortsCaptureService extends Service {
     }
 
     private synchronized void stopCapture(String message) {
-        if (currentState == State.STOPPING || !isActive()) {
+        if (!isActive()) {
             return;
         }
         currentState = State.STOPPING;
         currentMessage = "Finishing Shorts MP4 safely";
-        requestedFinishMessage = message;
-        releaseProjection();
-        if (encoder != null) {
-            encoder.stopSafely();
-        } else {
-            failCapture("Shorts encoder was unavailable while stopping");
-        }
-    }
-
-    private synchronized void finishCapture(boolean saved, String message) {
-        releaseProjection();
-        encoder = null;
+        boolean saved = releaseCapture(true);
         currentState = saved ? State.IDLE : State.ERROR;
         currentMessage = saved ? message : "Shorts MP4 could not be finalized";
         if (saved) {
@@ -287,53 +227,42 @@ public final class ShortsCaptureService extends Service {
         stopSelf();
     }
 
-    private synchronized void failCapture(String message) {
-        releaseProjection();
-        if (encoder != null) {
-            encoder.cancel();
-            encoder = null;
-        }
-        currentState = State.ERROR;
-        currentMessage = message;
-        stopForeground(STOP_FOREGROUND_REMOVE);
-        stopSelf();
-    }
-
-    private void releaseProjection() {
+    private boolean releaseCapture(boolean stopRecorder) {
+        boolean saved = true;
         if (virtualDisplay != null) {
             virtualDisplay.release();
             virtualDisplay = null;
         }
+        if (recorder != null) {
+            if (stopRecorder) {
+                try {
+                    recorder.stop();
+                } catch (RuntimeException error) {
+                    saved = false;
+                }
+            }
+            recorder.reset();
+            recorder.release();
+            recorder = null;
+        }
         if (projection != null) {
-            MediaProjection current = projection;
+            projection.stop();
             projection = null;
-            current.stop();
         }
-    }
-
-    private void updateEncoderMetrics() {
-        DirectMp4Encoder current = encoder;
-        if (current == null) {
-            return;
+        if (outputDescriptor != null) {
+            try {
+                outputDescriptor.close();
+            } catch (IOException error) {
+                saved = false;
+            }
+            outputDescriptor = null;
         }
-        currentEncodedFrames = current.encodedFrames();
-        currentActualFps = current.actualFramesPerSecond();
-        currentFirstPresentationUs = current.firstPresentationUs();
-        currentLastPresentationUs = current.lastPresentationUs();
-        currentTimestampCorrections = current.timestampCorrections();
-    }
-
-    private static void resetMetrics() {
-        currentEncodedFrames = 0;
-        currentActualFps = 0;
-        currentFirstPresentationUs = -1;
-        currentLastPresentationUs = -1;
-        currentTimestampCorrections = 0;
+        return saved;
     }
 
     @Override
     public void onDestroy() {
-        if (currentState == State.STARTING || currentState == State.RECORDING) {
+        if (isActive()) {
             stopCapture("Shorts MP4 saved because the recorder service stopped");
         }
         super.onDestroy();
