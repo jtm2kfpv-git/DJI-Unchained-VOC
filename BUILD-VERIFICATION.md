@@ -1,6 +1,6 @@
 # DJI Unchained VOC 0.7.2 build verification
 
-Verified again 28 August 2026 during GitHub source synchronization.
+Verified 27 August 2026.
 
 ## Automated result
 
@@ -19,8 +19,6 @@ Result: `BUILD SUCCESSFUL`
 - version code 9, version name `0.7.2-debug`
 - application label: `DJI Unchained VOC`
 - byte-exact match for both embedded N3 control packets against `samuelsadok/dji_protocol` commit `50c71b65fdb6825783f724e5cd3c1f09c2aa88ce`
-- repository root matches the preserved `versions/v0.7.2/` snapshot across 56 release-controlled files
-- preserved v0.7.0 and v0.7.1 snapshots also build, lint and pass 36 and 41 unit tests respectively
 
 ## v0.7.2 verification scope
 

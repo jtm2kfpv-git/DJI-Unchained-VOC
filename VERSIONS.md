@@ -1,17 +1,17 @@
-# Published source versions
+# Preserved versions
 
-Every published version is retained as a standalone, buildable source snapshot under `versions/`. APKs and checksum manifests are attached to the corresponding GitHub prerelease.
+Every release is retained as a standalone GitHub-ready source tree with APK artifacts and checksums.
 
-| Version | Source folder | Status |
+| Version | Source and APK folder | Status |
 |---|---|---|
-| 0.1.0 | [`versions/v0.1.0-hardware-confirmed/`](versions/v0.1.0-hardware-confirmed/) | Hardware-confirmed stream path; reconstructed buildable snapshot |
-| 0.2.0 | [`versions/v0.2.0/`](versions/v0.2.0/) | Preserved source snapshot |
-| 0.3.0 | [`versions/v0.3.0/`](versions/v0.3.0/) | Preserved source snapshot |
-| 0.4.0 | [`versions/v0.4.0/`](versions/v0.4.0/) | Preserved source snapshot |
-| 0.5.0 | [`versions/v0.5.0/`](versions/v0.5.0/) | Alpha recording/recovery line with proof videos |
-| 0.6.0 | [`versions/v0.6.0/`](versions/v0.6.0/) | Experimental DJI Unchained VOC UI, aspect selection and 9:16 Shorts workflow |
-| 0.7.0 | [`versions/v0.7.0/`](versions/v0.7.0/) | Development checkpoint for the agreed 29-change architecture program |
-| 0.7.1 | [`versions/v0.7.1/`](versions/v0.7.1/) | Hardware-tested responsive controls and expanded privacy-safe diagnostics |
-| 0.7.2 | [`versions/v0.7.2/`](versions/v0.7.2/) | Current root: lossless original MP4, optional raw H.264, revised offline layout, 30/60 Shorts and diagnostic schema 3; device regression pending |
+| 0.1.0 | `GitHub-Submission/N3-Local-View-0.1.0-hardware-confirmed/` | Exact hardware-confirmed debug APK; buildable source snapshot reconstructed and independently verified |
+| 0.2.0 | `GitHub-Submission/N3-Local-View-0.2.0/` | Original preserved source and APKs |
+| 0.3.0 | `GitHub-Submission/N3-Local-View-0.3.0/` | Original preserved source and APKs |
+| 0.4.0 | `GitHub-Submission/N3-Local-View-0.4.0/` | Original preserved source and APKs |
+| 0.5.0 | `GitHub-Submission/N3-Local-View-0.5.0/` | Created when the 0.5 verification gate completes |
+| 0.6.0 | `GitHub-Submission/N3-Local-View-0.6.0/` | DJI Unchained VOC identity, aspect selection, Shorts viewport/MP4 capture, Logo v3, setup diagnostics and keep-awake control |
+| 0.7.0 | `GitHub-Submission/DJI-Unchained-VOC-0.7.0/` | Active development tree for the direct render/encode pipeline and the agreed 29-change program |
+| 0.7.1 | `GitHub-Submission/DJI-Unchained-VOC-0.7.1/` | Responsive control tray and expanded privacy-safe diagnostics |
+| 0.7.2 | `GitHub-Submission/DJI-Unchained-VOC-0.7.2/` | Non-disruptive lossless original MP4, optional raw H.264, top disconnected artwork, bottom controls, 30/60 Shorts selector and diagnostic schema 3 |
 
-The separate N3 GUI v0.5.1 showcase remains an experimental historical release and is not part of the numbered VOC source line.
+Never replace an existing version folder or APK. New development increments both `versionCode` and `versionName`, then creates a new submission folder.
