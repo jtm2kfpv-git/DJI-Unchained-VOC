@@ -16,12 +16,4 @@
     <string name="start_shorts_recording">Record Shorts MP4</string>
     <string name="stop_shorts_recording">Stop Shorts</string>
     <string name="finishing_recording">Finishing…</string>
-    <string name="output_format">Output: %1$s</string>
-    <string name="capture_fps">Record FPS: %1$d</string>
-    <string name="source_fps">Record FPS: SOURCE</string>
-    <string name="original_container">Original format: %1$s</string>
-    <string name="advanced_settings">Advanced settings</string>
-    <string name="hide_advanced">Hide advanced</string>
-    <string name="retry_shorts_recording">Retry Shorts MP4</string>
-    <string name="record_original">Record original stream</string>
 </resources>

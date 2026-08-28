@@ -19,7 +19,8 @@ public final class DisplayGeometry {
     public enum SourceAspect {
         AUTO("AUTO"),
         WIDE_16_9("16:9"),
-        CLASSIC_4_3("4:3");
+        CLASSIC_4_3("4:3"),
+        SHORTS_9_16("9:16 SHORTS");
 
         private final String label;
 
@@ -45,6 +46,7 @@ public final class DisplayGeometry {
             case AUTO -> new Size(Math.max(1, decodedWidth), Math.max(1, decodedHeight));
             case WIDE_16_9 -> new Size(16, 9);
             case CLASSIC_4_3 -> new Size(4, 3);
+            case SHORTS_9_16 -> new Size(9, 16);
         };
     }
 

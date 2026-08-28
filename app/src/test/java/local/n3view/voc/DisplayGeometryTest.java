@@ -43,13 +43,15 @@ public final class DisplayGeometryTest {
     }
 
     @Test
-    public void sourceAspectCyclesThroughWideAndClassic() {
+    public void sourceAspectCyclesThroughWideClassicAndShorts() {
         assertEquals(DisplayGeometry.SourceAspect.WIDE_16_9,
                 DisplayGeometry.SourceAspect.AUTO.next());
         assertEquals(DisplayGeometry.SourceAspect.CLASSIC_4_3,
                 DisplayGeometry.SourceAspect.WIDE_16_9.next());
-        assertEquals(DisplayGeometry.SourceAspect.AUTO,
+        assertEquals(DisplayGeometry.SourceAspect.SHORTS_9_16,
                 DisplayGeometry.SourceAspect.CLASSIC_4_3.next());
+        assertEquals(DisplayGeometry.SourceAspect.AUTO,
+                DisplayGeometry.SourceAspect.SHORTS_9_16.next());
     }
 
     @Test

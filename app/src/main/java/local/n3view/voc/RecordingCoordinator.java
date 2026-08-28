@@ -9,7 +9,6 @@ import java.util.Objects;
 public final class RecordingCoordinator {
     public enum Kind {
         NONE,
-        ORIGINAL_STREAM_MP4,
         RAW_H264,
         SHORTS_MP4
     }
@@ -49,12 +48,9 @@ public final class RecordingCoordinator {
         }
         kind = requestedKind;
         state = State.STARTING;
-        message = switch (requestedKind) {
-            case ORIGINAL_STREAM_MP4 -> "Preparing lossless original-stream MP4";
-            case RAW_H264 -> "Preparing raw original-stream H.264";
-            case SHORTS_MP4 -> "Preparing 9:16 MP4 recording";
-            case NONE -> throw new IllegalStateException("NONE cannot own the recorder");
-        };
+        message = requestedKind == Kind.RAW_H264
+                ? "Preparing original-stream recording"
+                : "Preparing 9:16 MP4 recording";
         notifyListener();
         return true;
     }
@@ -64,12 +60,9 @@ public final class RecordingCoordinator {
             return false;
         }
         state = State.ACTIVE;
-        message = switch (activeKind) {
-            case ORIGINAL_STREAM_MP4 -> "Remuxing the original incoming stream into MP4";
-            case RAW_H264 -> "Recording original incoming H.264 bytes";
-            case SHORTS_MP4 -> "Recording direct 9:16 MP4 output";
-            case NONE -> throw new IllegalStateException("NONE cannot be active");
-        };
+        message = activeKind == Kind.RAW_H264
+                ? "Recording original incoming H.264 stream"
+                : "Recording direct 9:16 MP4 output";
         notifyListener();
         return true;
     }
