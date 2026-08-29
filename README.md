@@ -101,6 +101,13 @@ The project targets Android API 36 and Java 17:
 .\gradlew.bat clean testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease
 ```
 
+For the complete guarded release workflow, including APK identity, permission and signature checks, exact source packaging and SHA-256 manifests:
+
+```powershell
+.\tools\build-release.ps1 -ValidateOnly
+.\tools\build-release.ps1
+```
+
 The debug application ID is `local.n3view.voc.debug`; release builds use `local.n3view.voc`. Release APKs are intentionally unsigned.
 
 To compare the embedded control bytes against the pinned upstream checkout:
@@ -109,7 +116,7 @@ To compare the embedded control bytes against the pinned upstream checkout:
 python tools/verify_protocol.py /path/to/dji_protocol
 ```
 
-See [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
+See [`PROJECT-STATE.md`](PROJECT-STATE.md), [`NEXT-RELEASE.md`](NEXT-RELEASE.md), [`TESTING.md`](TESTING.md), [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
 
 ## Development approach
 
@@ -121,3 +128,9 @@ The mobile framing and N3 control packets are pinned to `samuelsadok/dji_protoco
 
 - https://github.com/samuelsadok/dji_protocol/blob/50c71b65fdb6825783f724e5cd3c1f09c2aa88ce/usb_mobile_protocol.md
 - https://github.com/samuelsadok/dji_protocol/blob/50c71b65fdb6825783f724e5cd3c1f09c2aa88ce/scripts/video_out_mobile.py
+
+## License
+
+The source code and documentation are licensed under the [Apache License 2.0](LICENSE). Branded artwork and third-party trademarks are excluded from that grant; see [`ASSET-LICENSE.md`](ASSET-LICENSE.md).
+
+DJI is a trademark of its respective owner. This project is unofficial and is not affiliated with, endorsed by or supported by DJI.
