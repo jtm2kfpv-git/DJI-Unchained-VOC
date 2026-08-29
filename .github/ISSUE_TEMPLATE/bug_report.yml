@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a reproducible DJI Unchained VOC problem
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        DJI Unchained VOC is alpha software. Remove personal information, device identifiers and unrelated recordings before posting diagnostics publicly.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Include whether this is a debug or unsigned release build.
+      placeholder: 0.7.2-debug
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android device and OS
+      placeholder: Phone model, Android version, ROM
+    validations:
+      required: true
+  - type: input
+    id: fpv-hardware
+    attributes:
+      label: DJI hardware
+      placeholder: Goggles model, aircraft or Air Unit, relevant firmware if known
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - USB connection
+        - Live video
+        - Original-stream recording
+        - 9:16 Shorts recording
+        - Controls or layout
+        - Diagnostics or recovery
+        - Build or installation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest repeatable sequence, starting with goggles and app state.
+      placeholder: |
+        1. Power on...
+        2. Connect...
+        3. Select...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Privacy-reviewed evidence
+      description: Attach a diagnostic export or short recording only when necessary. Remove personal data and device identifiers first.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I reproduced this on the bench with propellers removed and appropriate cooling where required.
+          required: true
+        - label: I reviewed every attached diagnostic or recording for personal information and device identifiers.
+          required: true
+        - label: I understand this app is not a flight-safety, navigation or regulatory-compliance tool.
+          required: true
