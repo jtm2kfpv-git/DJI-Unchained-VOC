@@ -10,10 +10,10 @@ This is the short, authoritative project brief. Read it before planning or chang
 |---|---|
 | Product | DJI Unchained VOC |
 | Purpose | Offline Android USB live view and recording for a DJI Goggles N3 video stream without DJI Fly |
-| Current development version | 0.7.2 |
+| Current development version | 0.7.3 |
 | Latest hardware-tested version | 0.7.1 |
-| Android application ID | `local.n3view.voc` |
-| Debug application ID | `local.n3view.voc.debug` |
+| Android application ID | `local.djiunchained.voc` |
+| Debug application ID | `local.djiunchained.voc.debug` |
 | Minimum Android version | API 29 |
 | Target/compile Android version | API 36 |
 | Primary test phone | Rooted/unlocked Android 16 LineageOS phone |
@@ -59,6 +59,14 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Root source matches `versions/v0.7.2` across the guarded release files.
 - APK identity, permissions, and debug v2 signature were verified.
 
+### v0.7.3
+
+- Migrates the obsolete `local.n3view.voc` identity to `local.djiunchained.voc`.
+- Android treats this as a new application, so the legacy package must be removed before installation.
+- Current source branding identifiers are DJI Unchained VOC; historical snapshots remain unchanged.
+- Desktop verification passes with 48 unit tests, debug/release lint and both APK assemblies.
+- Hardware verification is pending.
+
 ## Pending validation
 
 v0.7.2 has not completed its on-device regression test. The following paths remain the priority:
@@ -70,7 +78,7 @@ v0.7.2 has not completed its on-device regression test. The following paths rema
 5. Disconnected top artwork and bottom-control layout on the target phone.
 6. Diagnostic schema 3 export after each recording mode.
 
-Until those tests pass, v0.7.1 remains the hardware-tested fallback and v0.7.2 remains an alpha prerelease.
+Until those tests pass, v0.7.1 remains the hardware-tested fallback and v0.7.3 remains an unreleased alpha development build.
 
 ## Source-of-truth rules
 

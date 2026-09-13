@@ -14,11 +14,12 @@ It does not control the aircraft and has no activation workflow, firmware update
 
 ## Current version
 
-The repository root contains **v0.7.2**, the current development release.
+The repository root contains **v0.7.3**, the current unreleased development version.
 
 - **v0.7.1** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
 - **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
-- [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.2.
+- **v0.7.3** removes the obsolete N3 View package identity. Because Android treats the new `local.djiunchained.voc` ID as a different app, remove the legacy installation once before installing it.
+- [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.3.
 - Installable APKs, checksum manifests and source ZIPs are attached to the matching GitHub prereleases.
 
 ## Hardware test gallery
@@ -108,7 +109,7 @@ For the complete guarded release workflow, including APK identity, permission an
 .\tools\build-release.ps1
 ```
 
-The debug application ID is `local.n3view.voc.debug`; release builds use `local.n3view.voc`. Release APKs are intentionally unsigned.
+The debug application ID is `local.djiunchained.voc.debug`; release builds use `local.djiunchained.voc`. Release APKs are intentionally unsigned.
 
 To compare the embedded control bytes against the pinned upstream checkout:
 
