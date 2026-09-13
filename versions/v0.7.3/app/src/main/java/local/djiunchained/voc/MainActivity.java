@@ -531,7 +531,7 @@ public final class MainActivity extends Activity implements
         videoViewport.addView(surfaceView, surfaceParams);
 
         logoBackdrop = new ImageView(this);
-        logoBackdrop.setImageResource(R.drawable.n3_logo_v3_background);
+        logoBackdrop.setImageResource(R.drawable.dji_unchained_voc_logo_background);
         logoBackdrop.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         logoBackdrop.setBackgroundColor(Color.BLACK);
         logoBackdrop.setContentDescription("DJI Unchained VOC Logo v3; waiting for video input");

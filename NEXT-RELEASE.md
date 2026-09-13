@@ -78,7 +78,7 @@ Keep this section short during development.
 | Item | Result |
 |---|---|
 | Approved scope | Permanent DJI Unchained VOC application/package identity migration |
-| Branch | `codex/rename-legacy-n3view` |
+| Branch | merged into `main` via pull request #7 |
 | Build result | Desktop gate passed: 48 tests, lint and debug/release assembly |
 | Hardware result | Not started |
 | Publication status | Not authorized |
