@@ -23,6 +23,8 @@ Fresh install or upgrade:
 - [ ] Expected project icon is visible.
 - [ ] App header reports the exact tested version.
 - [ ] Android app information shows the expected debug or release package.
+- [ ] The package is `local.djiunchained.voc.debug` for debug or `local.djiunchained.voc` for release.
+- [ ] A device carrying the legacy `local.n3view.voc` package receives clear uninstall/reinstall instructions.
 - [ ] App opens without an immediate crash.
 
 ## 2. Disconnected state

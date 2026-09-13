@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.3 — Identity cleanup (unreleased)
+
+Changed:
+
+- replaced the legacy `local.n3view.voc` package and namespace with `local.djiunchained.voc`
+- renamed the remaining current-source N3 View log and icon identifiers to DJI Unchained VOC equivalents
+- preserved v0.7.2 and earlier source snapshots unchanged
+
+Upgrade note: Android treats this application-ID migration as a different app. Remove the legacy package once before installing v0.7.3.
+
 ## 0.7.2 — Recording and layout iteration
 
 Added:
