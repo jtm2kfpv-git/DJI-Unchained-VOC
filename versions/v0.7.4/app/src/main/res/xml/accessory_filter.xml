@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The model/version strings are not yet publicly captured for N3's Android path.
+         Matching DJI broadly permits the first diagnostic attach; runtime code still
+         shows the identity and requires the user to press Connect. -->
+    <usb-accessory manufacturer="DJI" />
+</resources>

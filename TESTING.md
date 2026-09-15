@@ -81,28 +81,7 @@ Fresh install or upgrade:
 - [ ] Raw file decodes in a compatible desktop/player tool.
 - [ ] Switching back to lossless MP4 works without restarting the app.
 
-## 7. Shorts 9:16 at 30 FPS
-
-- [ ] Select `Output: 9:16 Shorts` and rotate to portrait.
-- [ ] Dragging positions the crop correctly.
-- [ ] Select `Record FPS: 30`.
-- [ ] Destination and MediaProjection prompts behave correctly.
-- [ ] Recording starts and stops cleanly.
-- [ ] Output is 720×1280 MP4.
-- [ ] Playback duration and orientation are correct.
-- [ ] Output has no obvious timestamp jumps, stalls, or corruption.
-
-## 8. Shorts 9:16 at 60 FPS
-
-- [ ] Select `Record FPS: 60`.
-- [ ] Recording starts and stops cleanly.
-- [ ] Output is 720×1280 MP4.
-- [ ] Playback duration and orientation are correct.
-- [ ] Motion is plausibly smoother than the 30 FPS test.
-- [ ] Diagnostics report a plausible actual output FPS.
-- [ ] Timestamp-correction count is recorded and reviewed.
-
-## 9. Recovery and lifecycle
+## 7. Recovery and lifecycle
 
 - [ ] Turning the goggles off produces a controlled disconnected state.
 - [ ] Turning them back on allows manual recovery.
@@ -111,13 +90,13 @@ Fresh install or upgrade:
 - [ ] Screen rotation does not crash the app or lose the USB session unexpectedly.
 - [ ] Keep-awake toggle behaves as labeled.
 
-## 10. Diagnostics
+## 8. Diagnostics
 
 - [ ] Export diagnostics after all recording modes have been exercised.
-- [ ] Export identifies the correct app version and schema 3.
+- [ ] Export identifies the correct app version and schema 4.
 - [ ] USB, video, resolution, and FPS fields reflect the test.
 - [ ] Parser resynchronizations and recovery actions are reviewed.
-- [ ] Decoder, original-recorder, and Shorts-recorder metrics are present.
+- [ ] Decoder and original-recorder metrics are present.
 - [ ] Actual FPS, frame/access-unit counts, drops, and timestamp corrections are present where applicable.
 - [ ] Export contains no video frames, precise location, account data, or unrelated personal information.
 
@@ -133,8 +112,6 @@ USB live view: PASS / FAIL / NOT TESTED
 Display/aspect modes: PASS / FAIL / NOT TESTED
 Original lossless MP4: PASS / FAIL / NOT TESTED
 Original raw H.264: PASS / FAIL / NOT TESTED
-Shorts 30 FPS: PASS / FAIL / NOT TESTED
-Shorts 60 FPS: PASS / FAIL / NOT TESTED
 Reconnect/lifecycle: PASS / FAIL / NOT TESTED
 Diagnostics export: ATTACHED / NOT ATTACHED
 

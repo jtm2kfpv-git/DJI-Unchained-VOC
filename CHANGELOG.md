@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.4 — Focused live view and original recording (unreleased)
+
+Removed:
+
+- experimental 9:16 Shorts output, crop controls and 30/60 FPS selection
+- Shorts MediaProjection foreground service, encoder and related Android permissions
+- Shorts-specific diagnostic fields and tests
+
+Changed:
+
+- diagnostics advance to schema 4
+- the interface now focuses on live view, aspect/display controls and original-stream recording
+- the removed implementation remains available in v0.7.3 and earlier snapshots for a possible future redesign
+
 ## 0.7.3 — Identity cleanup (unreleased)
 
 Changed:
