@@ -14,5 +14,6 @@ Every published version is retained as a standalone, buildable source snapshot u
 | 0.7.1 | [`versions/v0.7.1/`](versions/v0.7.1/) | Hardware-tested responsive controls and expanded privacy-safe diagnostics |
 | 0.7.2 | [`versions/v0.7.2/`](versions/v0.7.2/) | Lossless original MP4, optional raw H.264, revised offline layout, 30/60 Shorts and diagnostic schema 3; device regression pending |
 | 0.7.3 | [`versions/v0.7.3/`](versions/v0.7.3/) | Unreleased identity-cleanup snapshot using the permanent `local.djiunchained.voc` application ID; device regression pending |
+| 0.7.4 | [`versions/v0.7.4/`](versions/v0.7.4/) | Unreleased focused build without the experimental Shorts/MediaProjection path; device regression pending |
 
 The separate N3 GUI v0.5.1 showcase remains an experimental historical release and is not part of the numbered VOC source line.

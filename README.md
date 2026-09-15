@@ -14,12 +14,13 @@ It does not control the aircraft and has no activation workflow, firmware update
 
 ## Current version
 
-The repository root contains **v0.7.3**, the current unreleased development version.
+The repository root contains **v0.7.4**, the current unreleased development version.
 
 - **v0.7.1** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
 - **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
 - **v0.7.3** removes the obsolete N3 View package identity. Because Android treats the new `local.djiunchained.voc` ID as a different app, remove the legacy installation once before installing it.
-- [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.3.
+- **v0.7.4** removes the experimental 9:16 Shorts workflow and its MediaProjection service. It passes 43 unit tests, lint and both APK builds; the implementation remains preserved in earlier source snapshots for possible future redesign.
+- [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.4.
 - Installable APKs, checksum manifests and source ZIPs are attached to the matching GitHub prereleases.
 
 ## Hardware test gallery
@@ -30,9 +31,9 @@ These unedited screenshots were supplied from the Android 16 hardware test of th
 |---|---|---|
 | <img src="docs/media/disconnected-logo.png" width="230" alt="Disconnected screen with DJI Unchained VOC artwork"> | <img src="docs/media/disconnected-controls.png" width="230" alt="DJI Unchained VOC controls waiting for USB video"> | <img src="docs/media/advanced-controls.png" width="230" alt="Expanded connection and diagnostic controls"> |
 
-| Live Goggles N3 view | 9:16 Shorts mode | Android launcher icon |
-|---|---|---|
-| <img src="docs/media/live-view-controls.png" width="230" alt="Live Goggles N3 video with controls"> | <img src="docs/media/shorts-mode.png" width="230" alt="9:16 Shorts crop and recording controls"> | <img src="docs/media/app-icon-on-android.png" width="230" alt="DJI Unchained VOC launcher icon on Android"> |
+| Live Goggles N3 view | Android launcher icon |
+|---|---|
+| <img src="docs/media/live-view-controls.png" width="230" alt="Live Goggles N3 video with controls"> | <img src="docs/media/app-icon-on-android.png" width="230" alt="DJI Unchained VOC launcher icon on Android"> |
 
 Earlier v0.5.0 proof videos remain available for the [phone workflow](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-phone-live-view-and-recording.mp4) and [recorded goggles feed](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/download/v0.5.0/demo-recorded-goggles-feed.mp4). The public copies have audio and media metadata removed for privacy.
 
@@ -44,8 +45,6 @@ Earlier v0.5.0 proof videos remain available for the [phone workflow](https://gi
 - Hardware H.264 decode to a full-screen `SurfaceView`.
 - **FIT**, **FILL** and **STRETCH** display behavior.
 - Source-aspect selection for **AUTO**, **16:9** and **4:3**.
-- Center-positionable **9:16 Shorts** crop and experimental 720×1280 MP4 recording.
-- **30/60 FPS** Shorts selection with actual output-FPS diagnostics.
 - Default lossless original-stream MP4 remuxing with monotonic timestamps.
 - Optional raw Annex-B H.264 recording for troubleshooting and compatibility.
 - Original recording begins only after valid dimensions, SPS, PPS and an IDR keyframe.
@@ -53,7 +52,7 @@ Earlier v0.5.0 proof videos remain available for the [phone workflow](https://gi
 - Bounded recording queues keep slow storage from blocking USB reception or decoding.
 - Automatic reconnect, staged stream recovery and manual **Recover now**.
 - Responsive bottom control tray, top disconnected artwork and launcher icon.
-- Privacy-filtered diagnostic schema 3 export with stream, decoder, recovery and recorder metrics.
+- Privacy-filtered diagnostic schema 4 export with stream, decoder, recovery and original-recorder metrics.
 
 ## Privacy
 
@@ -62,27 +61,17 @@ Earlier v0.5.0 proof videos remain available for the [phone workflow](https://gi
 - No analytics, advertising, telemetry, crash-reporting SDK or updater.
 - USB video, recordings, artwork, preferences and diagnostics remain local.
 - Root is not requested or required.
-- MediaProjection permission is requested only when starting a Shorts recording.
+- No foreground-service or MediaProjection permission.
 
 ## Recording
 
 ### Original incoming stream
 
 1. Connect the goggles and wait for `USB ✓ VIDEO ✓`.
-2. Select `Output: Original stream`.
-3. Choose `Original format: Lossless MP4` or `Raw H.264` in Advanced settings.
-4. Tap **Record original stream** and later **Stop and save**.
+2. Choose `Original format: Lossless MP4` or `Raw H.264` in Advanced settings.
+3. Tap **Start recording** and later **Stop recording**.
 
 The MP4 path remuxes the incoming compressed stream without re-encoding. Raw H.264 has no container timestamps, so some players may guess the wrong playback speed.
-
-### 9:16 Shorts
-
-1. Select `Output: 9:16 Shorts` and rotate Android to portrait.
-2. Drag the image horizontally to position the crop.
-3. Select **Record FPS: 30** or **Record FPS: 60**.
-4. Tap **Record Shorts MP4**, choose a destination and approve Android's screen-capture prompt.
-
-The selected frame rate is a maximum; actual FPS depends on the incoming feed, decoder, encoder and device load.
 
 ## Bench-test order
 
@@ -117,7 +106,7 @@ To compare the embedded control bytes against the pinned upstream checkout:
 python tools/verify_protocol.py /path/to/dji_protocol
 ```
 
-See [`PROJECT-STATE.md`](PROJECT-STATE.md), [`NEXT-RELEASE.md`](NEXT-RELEASE.md), [`TESTING.md`](TESTING.md), [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
+See [`PROJECT-STATE.md`](PROJECT-STATE.md), [`NEXT-RELEASE.md`](NEXT-RELEASE.md), [`TESTING.md`](TESTING.md), [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), [deferred features](docs/DEFERRED-FEATURES.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
 
 ## Development approach
 
