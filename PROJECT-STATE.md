@@ -10,7 +10,9 @@ This is the short, authoritative project brief. Read it before planning or chang
 |---|---|
 | Product | DJI Unchained VOC |
 | Purpose | Offline Android USB live view and recording for a DJI Goggles N3 video stream without DJI Fly |
-| Current development version | 0.7.4 |
+| Current released version | 0.7.4 |
+| Current development milestone | v0.8 advanced recording |
+| Current development build | 0.8.0-dev / versionCode 12 |
 | Latest hardware-tested version | 0.7.4 |
 | Android application ID | `local.djiunchained.voc` |
 | Debug application ID | `local.djiunchained.voc.debug` |
@@ -75,15 +77,19 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Preserves the removed implementation in v0.7.3 and earlier snapshots for possible future redesign.
 - Desktop verification passes with 43 unit tests, debug/release lint and both APK assemblies.
 - Both APK variants declare no Android permissions.
-- Hardware verification is pending.
+- Hardware verification passed, including follow-up raw H.264 and auto-reconnect checks.
+
+### v0.8
+
+- Approved scope: configurable instant replay and split recordings.
+- The pure keyframe-aligned replay-buffer and split-policy foundation is implemented and passes
+  the desktop test/lint/build gate.
+- Integration, interface work, diagnostics schema 5 and hardware acceptance remain pending.
 
 ## Remaining coverage
 
-The primary v0.7.4 live-view and lossless-MP4 workflow is hardware-tested. Remaining optional coverage is:
-
-1. Retest raw H.264 fallback recording on v0.7.4.
-2. Exercise auto reconnect during a deliberate goggles power cycle.
-3. Broaden testing beyond the primary POCO F2 Pro / Android 16 device.
+The complete v0.7.4 workflow is hardware-tested on the primary device. Broader testing beyond the
+POCO F2 Pro / Android 16 setup remains desirable but does not block v0.8 development.
 
 Detailed evidence is recorded in [docs/hardware-tests/v0.7.4.md](docs/hardware-tests/v0.7.4.md).
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0-dev — Advanced recording foundation
+
+Started:
+
+- bounded, keyframe-aligned instant-replay buffer model
+- keyframe-aware recording split policy
+- v0.8 architecture, failure rules and hardware acceptance plan
+- explicit development-version handling so CI permits active work while final releases still
+  require an exact immutable source snapshot
+
+Validation: 51 unit tests, debug/release lint and both APK assemblies pass. Replay writing, split
+file rollover, interface controls and hardware acceptance remain pending.
+
 ## 0.7.4 — Focused live view and original recording
 
 Removed:
@@ -19,7 +32,7 @@ Validation:
 - 43 unit tests, debug/release lint, APK assembly and GitHub Actions pass
 - hardware-tested with DJI Goggles N3 on the primary Android 16 phone
 - validated 1920×1080 lossless MP4: 650 frames, 21.69 seconds, approximately 29.97 FPS and zero recorder drops
-- raw H.264 and auto reconnect were not retested in this session
+- raw H.264 and auto reconnect passed follow-up user checks after the recorded acceptance session
 
 ## 0.7.3 — Identity cleanup (unreleased)
 

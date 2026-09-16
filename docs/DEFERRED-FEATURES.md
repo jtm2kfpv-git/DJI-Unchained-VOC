@@ -29,5 +29,6 @@ A future version should not simply restore that code. Prefer a direct video pipe
 
 ## Other retained ideas
 
-- Instant replay buffer with a configurable retained duration.
-- Automatic splitting of long recordings into user-configurable parts.
+- Instant replay and configurable recording splits were promoted into the approved v0.8 milestone.
+  Their current design and implementation status are tracked in
+  [V0.8-ARCHITECTURE.md](V0.8-ARCHITECTURE.md).

@@ -14,7 +14,9 @@ It does not control the aircraft and has no activation workflow, firmware update
 
 ## Current version
 
-The repository root contains **v0.7.4**, the current hardware-tested alpha prerelease.
+The latest published and hardware-tested alpha prerelease is **v0.7.4**. The repository root now
+contains the **v0.8.0-dev** recording-foundation work; its new replay and split features are not yet
+available in the interface and should not be treated as released functionality.
 
 - **v0.7.4** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
 - **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
@@ -97,6 +99,10 @@ For the complete guarded release workflow, including APK identity, permission an
 .\tools\build-release.ps1 -ValidateOnly
 .\tools\build-release.ps1
 ```
+
+The release packager intentionally rejects a version ending in `-dev`. During active development,
+use the Gradle verification command; remove the qualifier and create the matching immutable source
+snapshot only when the release candidate is complete.
 
 The debug application ID is `local.djiunchained.voc.debug`; release builds use `local.djiunchained.voc`. Release APKs are intentionally unsigned.
 
