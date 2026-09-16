@@ -1,6 +1,6 @@
 # DJI Unchained VOC — Project State
 
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 This is the short, authoritative project brief. Read it before planning or changing the app. Use the linked documents only when more detail is needed.
 
@@ -11,7 +11,7 @@ This is the short, authoritative project brief. Read it before planning or chang
 | Product | DJI Unchained VOC |
 | Purpose | Offline Android USB live view and recording for a DJI Goggles N3 video stream without DJI Fly |
 | Current development version | 0.7.4 |
-| Latest hardware-tested version | 0.7.1 |
+| Latest hardware-tested version | 0.7.4 |
 | Android application ID | `local.djiunchained.voc` |
 | Debug application ID | `local.djiunchained.voc.debug` |
 | Minimum Android version | API 29 |
@@ -63,7 +63,9 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Android treats this as a new application, so the legacy package must be removed before installation.
 - Current source branding identifiers are DJI Unchained VOC; historical snapshots remain unchanged.
 - Desktop verification passes with 48 unit tests, debug/release lint and both APK assemblies.
-- Hardware verification is pending.
+- Target testing passed for installation, controls, Goggles N3 USB live view, lossless original MP4 and manual recovery.
+- The validated 1920×1080 MP4 contained 650 frames over 21.69 seconds at approximately 29.97 FPS, with zero recorder drops or timestamp corrections.
+- Raw H.264 and auto reconnect were not retested in this session.
 
 ### v0.7.4
 
@@ -75,17 +77,15 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Both APK variants declare no Android permissions.
 - Hardware verification is pending.
 
-## Pending validation
+## Remaining coverage
 
-The current 0.7.x recording changes have not completed their on-device regression test. The following paths remain the priority:
+The primary v0.7.4 live-view and lossless-MP4 workflow is hardware-tested. Remaining optional coverage is:
 
-1. Lossless original-stream MP4 recording and playback.
-2. Raw H.264 fallback recording.
-3. Preview stability while original-stream recording is active.
-4. Disconnected top artwork and bottom-control layout on the target phone.
-5. Diagnostic schema 4 export after each original recording mode.
+1. Retest raw H.264 fallback recording on v0.7.4.
+2. Exercise auto reconnect during a deliberate goggles power cycle.
+3. Broaden testing beyond the primary POCO F2 Pro / Android 16 device.
 
-Until those tests pass, v0.7.1 remains the hardware-tested fallback and v0.7.4 remains an unreleased alpha development build.
+Detailed evidence is recorded in [docs/hardware-tests/v0.7.4.md](docs/hardware-tests/v0.7.4.md).
 
 ## Source-of-truth rules
 

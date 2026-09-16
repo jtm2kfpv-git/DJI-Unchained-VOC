@@ -1,6 +1,6 @@
 # Next Release — v0.7.4
 
-Status: **Implementation in progress — Shorts removal approved**
+Status: **Hardware accepted — prerelease publication approved**
 
 Baseline: **v0.7.3**
 
@@ -65,20 +65,21 @@ Implementation history and redesign criteria are recorded in [docs/DEFERRED-FEAT
 - [x] Clean unit-test, lint, debug-build and release-build gate passes.
 - [x] Root source matches `versions/v0.7.4`.
 - [x] Debug APK identity, permissions and signature verified.
-- [ ] Target-phone checklist completed.
-- [ ] DJI Goggles N3 live view passes.
-- [ ] Original MP4 and raw H.264 recordings pass.
-- [ ] Diagnostic schema 4 export reviewed for errors or drops.
+- [x] Target-phone primary-workflow checklist completed.
+- [x] DJI Goggles N3 live view passes.
+- [x] Original lossless MP4 recording and playback pass.
+- [ ] Raw H.264 fallback retest deferred; the path is unchanged from the earlier hardware-tested implementation.
+- [x] Diagnostic schema 4 export reviewed for errors or drops.
 - [x] README, version history, changelog and project state updated.
 - [ ] APKs, source ZIP and SHA-256 manifests prepared.
-- [ ] Publication explicitly approved.
+- [x] Publication explicitly approved.
 
 ## Implementation record
 
 | Item | Result |
 |---|---|
 | Approved scope | Remove the complete experimental Shorts/MediaProjection feature |
-| Branch | `codex/remove-shorts-v0.7.4` |
+| Branch | `codex/publish-v0.7.4-prerelease` |
 | Build result | Passed: 43 tests, lint, debug/release assembly, APK identity/permission/signature inspection and snapshot parity |
-| Hardware result | Not started |
-| Publication status | Not authorized |
+| Hardware result | Primary workflow passed on POCO F2 Pro / Android 16 with DJI Goggles N3; raw H.264 and auto reconnect not retested |
+| Publication status | Prerelease authorized; artifacts pending guarded build |

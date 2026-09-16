@@ -1,8 +1,8 @@
 # DJI Unchained VOC 0.7.4 build verification
 
-Verification date: 2026-09-15
+Verification date: 2026-09-16
 
-Status: **desktop verified; hardware test and publication pending**
+Status: **desktop and primary hardware workflow verified; prerelease publication approved**
 
 ## Scope
 
@@ -46,10 +46,16 @@ Results:
 - release APK is intentionally unsigned
 - active application source contains no Shorts, 9:16 or MediaProjection implementation reference
 
-## Pending
+## Hardware verification
 
-- Goggles N3 live view and original MP4/raw H.264 recording require a target-device regression
-- diagnostic schema 4 requires an on-device export review
-- v0.7.4 is not authorized for publication
+- DJI Goggles N3 USB connection and 1920×1080 live view passed on the target Android 16 phone.
+- Controls, aspect selection, lossless original-stream MP4 and manual recovery passed.
+- The captured MP4 decoded all 650 frames and reported zero recorder drops, timestamp corrections or recording-surface losses.
+- Diagnostic schema 4 was exported and reviewed.
+- Raw H.264 and auto reconnect were not retested in this session.
+
+See [docs/hardware-tests/v0.7.4.md](docs/hardware-tests/v0.7.4.md) for the evidence record.
+
+Prerelease publication was authorized on 2026-09-16.
 
 The previous verification record remains in [BUILD-VERIFICATION-0.7.3.md](BUILD-VERIFICATION-0.7.3.md).

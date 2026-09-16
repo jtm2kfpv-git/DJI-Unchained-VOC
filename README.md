@@ -14,12 +14,12 @@ It does not control the aircraft and has no activation workflow, firmware update
 
 ## Current version
 
-The repository root contains **v0.7.4**, the current unreleased development version.
+The repository root contains **v0.7.4**, the current hardware-tested alpha prerelease.
 
-- **v0.7.1** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
+- **v0.7.4** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
 - **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
 - **v0.7.3** removes the obsolete N3 View package identity. Because Android treats the new `local.djiunchained.voc` ID as a different app, remove the legacy installation once before installing it.
-- **v0.7.4** removes the experimental 9:16 Shorts workflow and its MediaProjection service. It passes 43 unit tests, lint and both APK builds; the implementation remains preserved in earlier source snapshots for possible future redesign.
+- **v0.7.4** removes the experimental 9:16 Shorts workflow and its MediaProjection service. It passes 43 unit tests, lint, both APK builds, live-view testing and lossless-MP4 validation; the removed implementation remains preserved for possible future redesign.
 - [`versions/`](versions/) preserves standalone source snapshots from v0.1.0 through v0.7.4.
 - Installable APKs, checksum manifests and source ZIPs are attached to the matching GitHub prereleases.
 
@@ -106,7 +106,7 @@ To compare the embedded control bytes against the pinned upstream checkout:
 python tools/verify_protocol.py /path/to/dji_protocol
 ```
 
-See [`PROJECT-STATE.md`](PROJECT-STATE.md), [`NEXT-RELEASE.md`](NEXT-RELEASE.md), [`TESTING.md`](TESTING.md), [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), [deferred features](docs/DEFERRED-FEATURES.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
+See [`PROJECT-STATE.md`](PROJECT-STATE.md), [`NEXT-RELEASE.md`](NEXT-RELEASE.md), [`TESTING.md`](TESTING.md), [`VERSIONS.md`](VERSIONS.md), [`CHANGELOG.md`](CHANGELOG.md), the [v0.7.4 hardware report](docs/hardware-tests/v0.7.4.md), [deferred features](docs/DEFERRED-FEATURES.md), the [v0.7 implementation matrix](docs/V0.7-IMPLEMENTATION.md) and [`BUILD-VERIFICATION.md`](BUILD-VERIFICATION.md) for detailed status.
 
 ## Development approach
 
