@@ -14,6 +14,10 @@
     <string name="stop_recording">Stop recording</string>
     <string name="keep_awake">Keep awake: %1$s</string>
     <string name="original_container">Original format: %1$s</string>
+    <string name="instant_replay">Instant replay: %1$s</string>
+    <string name="replay_window">Replay window: %1$d s</string>
+    <string name="save_replay">Save replay</string>
+    <string name="saving_replay">Saving replay…</string>
     <string name="advanced_settings">Advanced settings</string>
     <string name="hide_advanced">Hide advanced</string>
 </resources>

@@ -33,7 +33,7 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Provides raw H.264 original-stream recording as an Advanced fallback.
 - Stores automatic original recordings in `Movies/DJI Unchained VOC`.
 - Shows the project artwork while disconnected and keeps responsive controls at the bottom.
-- Exports privacy-filtered diagnostic schema 4 data.
+- Exports privacy-filtered diagnostics: schema 4 in v0.7.4 and schema 5 in v0.8.0-dev.
 - Supports manual recovery, auto reconnect, and keep-awake controls.
 
 ## Privacy and safety boundary
@@ -84,7 +84,9 @@ This is the short, authoritative project brief. Read it before planning or chang
 - Approved scope: configurable instant replay and split recordings.
 - The pure keyframe-aligned replay-buffer and split-policy foundation is implemented and passes
   the desktop test/lint/build gate.
-- Integration, interface work, diagnostics schema 5 and hardware acceptance remain pending.
+- Instant replay integration, 15/30/60-second controls, asynchronous lossless MP4 saving and
+  diagnostic schema 5 are implemented in the development build.
+- Instant replay hardware acceptance and split-recording integration remain pending.
 
 ## Remaining coverage
 

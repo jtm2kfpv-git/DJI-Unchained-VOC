@@ -16,7 +16,8 @@ It does not control the aircraft and has no activation workflow, firmware update
 
 The latest published and hardware-tested alpha prerelease is **v0.7.4**. The repository root now
 contains the **v0.8.0-dev** recording-foundation work; its new replay and split features are not yet
-available in the interface and should not be treated as released functionality.
+released functionality. Instant replay is implemented for hardware testing; configurable split
+recording remains under development.
 
 - **v0.7.4** is the latest hardware-tested checkpoint on the target Android 16 LineageOS phone with DJI Goggles N3.
 - **v0.7.2** builds, lints and passes 48 unit tests. Its new lossless MP4 remuxer and revised 30/60 FPS Shorts encoder still require a short device regression test.
@@ -51,10 +52,14 @@ Earlier v0.5.0 proof videos remain available for the [phone workflow](https://gi
 - Optional raw Annex-B H.264 recording for troubleshooting and compatibility.
 - Original recording begins only after valid dimensions, SPS, PPS and an IDR keyframe.
 - Original files save locally to `Movies/DJI Unchained VOC` without leaving the app.
+- **v0.8.0-dev:** optional 15/30/60-second instant replay with asynchronous lossless MP4 saving.
+- **v0.8.0-dev:** bounded 128 MiB compressed replay memory with keyframe alignment and low-memory
+  protection.
 - Bounded recording queues keep slow storage from blocking USB reception or decoding.
 - Automatic reconnect, staged stream recovery and manual **Recover now**.
 - Responsive bottom control tray, top disconnected artwork and launcher icon.
-- Privacy-filtered diagnostic schema 4 export with stream, decoder, recovery and original-recorder metrics.
+- Privacy-filtered diagnostic export with stream, decoder, recovery, recorder and replay metrics
+  (schema 5 in v0.8.0-dev).
 
 ## Privacy
 

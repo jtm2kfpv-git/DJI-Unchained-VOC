@@ -8,7 +8,7 @@ import java.util.Objects;
 import local.djiunchained.voc.protocol.H264AccessUnit;
 
 /**
- * Memory-bounded buffer for a future lossless instant-replay save path.
+ * Memory-bounded buffer for the lossless instant-replay save path.
  *
  * <p>The buffer always begins with a usable IDR access unit carrying SPS/PPS metadata. When a
  * duration or memory limit removes that starting point, dependent frames are discarded until the
@@ -45,6 +45,18 @@ final class InstantReplayBuffer {
         boolean usableStart() {
             return keyFrame && sps != null && sps.length > 0 && pps != null && pps.length > 0;
         }
+
+        byte[] payloadForWriter() {
+            return data;
+        }
+
+        byte[] spsForWriter() {
+            return sps;
+        }
+
+        byte[] ppsForWriter() {
+            return pps;
+        }
     }
 
     record Snapshot(
@@ -60,6 +72,15 @@ final class InstantReplayBuffer {
         boolean ready() {
             return !samples.isEmpty() && samples.get(0).usableStart();
         }
+    }
+
+    record Stats(
+            boolean ready,
+            int accessUnits,
+            long retainedBytes,
+            long retainedDurationUs,
+            long evictedUnits,
+            long evictedBytes) {
     }
 
     private final long maximumDurationUs;
@@ -84,7 +105,11 @@ final class InstantReplayBuffer {
     synchronized void offer(H264AccessUnit unit, long arrivalUs) {
         Objects.requireNonNull(unit, "unit");
         Sample sample = new Sample(
-                unit.data(), unit.keyFrame(), unit.sps(), unit.pps(), arrivalUs);
+                unit.data(),
+                unit.keyFrame(),
+                unit.keyFrame() ? unit.sps() : null,
+                unit.keyFrame() ? unit.pps() : null,
+                arrivalUs);
         samples.addLast(sample);
         retainedBytes += sample.retainedBytes();
 
@@ -97,13 +122,22 @@ final class InstantReplayBuffer {
     }
 
     synchronized Snapshot snapshot() {
-        List<Sample> copy = new ArrayList<>(samples.size());
-        for (Sample sample : samples) {
-            copy.add(new Sample(
-                    sample.data, sample.keyFrame, sample.sps, sample.pps, sample.arrivalUs));
-        }
         return new Snapshot(
-                copy, retainedBytes, retainedDurationUs(), evictedUnits, evictedBytes);
+                new ArrayList<>(samples),
+                retainedBytes,
+                retainedDurationUs(),
+                evictedUnits,
+                evictedBytes);
+    }
+
+    synchronized Stats stats() {
+        return new Stats(
+                !samples.isEmpty() && samples.peekFirst().usableStart(),
+                samples.size(),
+                retainedBytes,
+                retainedDurationUs(),
+                evictedUnits,
+                evictedBytes);
     }
 
     synchronized void clear() {

@@ -81,7 +81,25 @@ Fresh install or upgrade:
 - [ ] Raw file decodes in a compatible desktop/player tool.
 - [ ] Switching back to lossless MP4 works without restarting the app.
 
-## 7. Recovery and lifecycle
+## 7. Instant replay (v0.8 development builds)
+
+- [ ] Replay is OFF after a fresh launch, even when a duration was selected previously.
+- [ ] Advanced settings cycle through 15, 30 and 60-second replay windows.
+- [ ] Enabling replay first reports that it is waiting for a usable keyframe.
+- [ ] Replay status advances to ready and reports plausible duration and memory use.
+- [ ] **Save replay** creates an MP4 in `Movies/DJI Unchained VOC`.
+- [ ] Preview remains stable and the rolling buffer continues while the MP4 is saved.
+- [ ] Saved clip begins cleanly, plays independently and contains video from before the tap.
+- [ ] Repeat saving works without restarting the app.
+- [ ] Saving is safely blocked during original recording, and original recording is safely blocked
+  while a replay save is being finalized.
+- [ ] Disabling replay clears retained video.
+- [ ] Changing replay duration clears the old window and restarts at a usable keyframe.
+- [ ] USB disconnect/reset clears the old replay window and does not mix two stream sessions.
+- [ ] Test 15, 30 and 60-second windows separately.
+- [ ] Inspect each supplied MP4 with FFmpeg/ffprobe for decode errors and monotonic timestamps.
+
+## 8. Recovery and lifecycle
 
 - [ ] Turning the goggles off produces a controlled disconnected state.
 - [ ] Turning them back on allows manual recovery.
@@ -90,14 +108,16 @@ Fresh install or upgrade:
 - [ ] Screen rotation does not crash the app or lose the USB session unexpectedly.
 - [ ] Keep-awake toggle behaves as labeled.
 
-## 8. Diagnostics
+## 9. Diagnostics
 
 - [ ] Export diagnostics after all recording modes have been exercised.
-- [ ] Export identifies the correct app version and schema 4.
+- [ ] Export identifies the correct app version and schema: 4 for v0.7.4 or 5 for v0.8 builds.
 - [ ] USB, video, resolution, and FPS fields reflect the test.
 - [ ] Parser resynchronizations and recovery actions are reviewed.
 - [ ] Decoder and original-recorder metrics are present.
 - [ ] Actual FPS, frame/access-unit counts, drops, and timestamp corrections are present where applicable.
+- [ ] Schema 5 reports replay enabled state, requested/retained duration, memory, evictions, save
+  state, output metrics and failures.
 - [ ] Export contains no video frames, precise location, account data, or unrelated personal information.
 
 ## Compact result report
@@ -112,6 +132,7 @@ USB live view: PASS / FAIL / NOT TESTED
 Display/aspect modes: PASS / FAIL / NOT TESTED
 Original lossless MP4: PASS / FAIL / NOT TESTED
 Original raw H.264: PASS / FAIL / NOT TESTED
+Instant replay 15/30/60: PASS / FAIL / NOT TESTED
 Reconnect/lifecycle: PASS / FAIL / NOT TESTED
 Diagnostics export: ATTACHED / NOT ATTACHED
 

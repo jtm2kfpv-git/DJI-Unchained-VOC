@@ -2,6 +2,7 @@ package local.djiunchained.voc;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ComponentCallbacks2;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -54,6 +55,7 @@ public final class MainActivity extends Activity implements
         UsbAccessoryController.Listener,
         AvcSurfaceDecoder.Listener,
         OriginalStreamRecorder.Listener,
+        InstantReplaySaver.Listener,
         SurfaceHolder.Callback {
 
     private static final String TAG = "DJIUnchainedVOC";
@@ -63,6 +65,7 @@ public final class MainActivity extends Activity implements
     private static final String PREF_AUTO_RECONNECT = "auto_reconnect";
     private static final String PREF_KEEP_AWAKE = "keep_awake";
     private static final String PREF_ORIGINAL_CONTAINER = "original_container";
+    private static final String PREF_REPLAY_DURATION_SECONDS = "replay_duration_seconds";
     private static final int CREATE_DIAGNOSTICS_REQUEST = 40;
 
     private FrameLayout root;
@@ -79,6 +82,7 @@ public final class MainActivity extends Activity implements
     private TextView statsView;
     private TextView healthView;
     private TextView recordingView;
+    private TextView replayView;
     private TextView setupView;
     private Button displayModeButton;
     private Button aspectButton;
@@ -87,9 +91,14 @@ public final class MainActivity extends Activity implements
     private Button keepAwakeButton;
     private Button originalContainerButton;
     private Button recordingButton;
+    private Button replayEnableButton;
+    private Button replayDurationButton;
+    private Button saveReplayButton;
     private UsbAccessoryController usb;
     private AvcSurfaceDecoder videoDecoder;
     private OriginalStreamRecorder recorder;
+    private InstantReplaySaver replaySaver;
+    private volatile InstantReplayBuffer replayBuffer;
     private final H264AnnexBAssembler assembler = new H264AnnexBAssembler();
     private final StreamWatchdog watchdog = new StreamWatchdog();
     private final DiagnosticTimeline timeline =
@@ -101,6 +110,8 @@ public final class MainActivity extends Activity implements
     private volatile OriginalStreamRecorder.Container originalContainer;
     private volatile boolean autoReconnect;
     private volatile boolean keepAwake;
+    private volatile boolean replayEnabled;
+    private volatile int replayDurationSeconds;
     private volatile int sourceWidth = 16;
     private volatile int sourceHeight = 9;
     private long previousStatsAt;
@@ -113,6 +124,7 @@ public final class MainActivity extends Activity implements
     private volatile long latestQueuedFrames;
     private volatile long latestDecoderDrops;
     private volatile boolean surfaceReady;
+    private volatile boolean videoFormatKnown;
     private volatile boolean streamActive;
     private volatile long lastRenderedFrameAt;
     private volatile long lastFrameUiAt;
@@ -124,6 +136,8 @@ public final class MainActivity extends Activity implements
     private volatile int surfaceLossesWhileRecording;
     private volatile OriginalStreamRecorder.State lastRecordedTimelineState =
             OriginalStreamRecorder.State.IDLE;
+    private volatile ReplaySaveLifecycle.State lastReplaySaveTimelineState =
+            ReplaySaveLifecycle.State.IDLE;
     private final long sessionStartedAt = SystemClock.elapsedRealtime();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final Runnable backdropWatch = new Runnable() {
@@ -131,6 +145,7 @@ public final class MainActivity extends Activity implements
         public void run() {
             updateBackdropVisibility();
             updateStatusStrip(performanceTracker.snapshot().fps1Second());
+            updateReplayUi();
             if (!destroyed) {
                 uiHandler.postDelayed(this, 500);
             }
@@ -148,6 +163,10 @@ public final class MainActivity extends Activity implements
                     OriginalStreamRecorder.State.IDLE,
                     OriginalStreamRecorder.Container.LOSSLESS_MP4,
                     0, 0, 0, 0, -1, -1, 0, 0, "Not recording");
+    private volatile ReplaySaveLifecycle.Snapshot replaySaveSnapshot =
+            new ReplaySaveLifecycle.Snapshot(
+                    ReplaySaveLifecycle.State.IDLE,
+                    0, 0, 0, -1, -1, 0, 0, 0, "Replay saver idle");
     private volatile boolean destroyed;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,8 +178,15 @@ public final class MainActivity extends Activity implements
                 preferences.getString(PREF_ORIGINAL_CONTAINER, null));
         autoReconnect = preferences.getBoolean(PREF_AUTO_RECONNECT, false);
         keepAwake = preferences.getBoolean(PREF_KEEP_AWAKE, true);
+        replayDurationSeconds = InstantReplayConfiguration.normalizeDurationSeconds(
+                preferences.getInt(
+                        PREF_REPLAY_DURATION_SECONDS,
+                        InstantReplayConfiguration.DEFAULT_DURATION_SECONDS));
+        replayEnabled = false;
+        replayBuffer = InstantReplayConfiguration.createBuffer(replayDurationSeconds);
         applyKeepAwake();
         recorder = new OriginalStreamRecorder(getContentResolver(), this);
+        replaySaver = new InstantReplaySaver(getContentResolver(), this);
         timeline.add("app", "created " + BuildConfig.VERSION_NAME);
 
         buildUi();
@@ -224,6 +250,12 @@ public final class MainActivity extends Activity implements
         if (recorder != null) {
             recorder.close();
         }
+        if (replaySaver != null) {
+            replaySaver.close();
+        }
+        if (replayBuffer != null) {
+            replayBuffer.clear();
+        }
         if (usb != null) {
             usb.close();
         }
@@ -280,10 +312,15 @@ public final class MainActivity extends Activity implements
         if (recorder != null) {
             recorder.stop("USB transport reset; recording closed safely");
         }
+        if (replayBuffer != null) {
+            replayBuffer.clear();
+            timeline.add("instant_replay", "buffer cleared for USB transport reset");
+        }
         latestVideoPackets = 0;
         latestRenderedFrames = 0;
         lastRenderedFrameAt = 0;
         streamActive = false;
+        videoFormatKnown = false;
         watchdog.setActive(false, SystemClock.elapsedRealtime(), 0, 0);
         assembler.reset();
         if (videoDecoder != null) {
@@ -335,6 +372,9 @@ public final class MainActivity extends Activity implements
         assembler.accept(bytes, unit -> {
             videoDecoder.queue(unit);
             recorder.accept(unit);
+            if (replayEnabled) {
+                replayBuffer.offer(unit, System.nanoTime() / 1_000);
+            }
         });
     }
 
@@ -352,6 +392,25 @@ public final class MainActivity extends Activity implements
             onStatus(snapshot.message());
         }
         runOnUiThread(() -> updateRecordingUi(snapshot));
+    }
+
+    @Override
+    public void onReplaySaveChanged(ReplaySaveLifecycle.Snapshot snapshot) {
+        replaySaveSnapshot = snapshot;
+        if (snapshot.state() != lastReplaySaveTimelineState) {
+            lastReplaySaveTimelineState = snapshot.state();
+            timeline.add("instant_replay_save", snapshot.state() + ": " + snapshot.message());
+        }
+        if (destroyed) {
+            return;
+        }
+        if (snapshot.state() == ReplaySaveLifecycle.State.ERROR) {
+            onStatus(snapshot.message());
+        } else if (snapshot.state() == ReplaySaveLifecycle.State.IDLE
+                && snapshot.completedSaves() > 0) {
+            onStatus(snapshot.message());
+        }
+        runOnUiThread(this::updateReplayUi);
     }
 
     @Override
@@ -428,6 +487,7 @@ public final class MainActivity extends Activity implements
         runOnUiThread(() -> {
             sourceWidth = width;
             sourceHeight = height;
+            videoFormatKnown = true;
             timeline.add("video_format", width + "x" + height);
             updateSurfaceLayout();
         });
@@ -544,6 +604,9 @@ public final class MainActivity extends Activity implements
         recordingView = text("Recording: idle", 11, 0xFFB8C8D4);
         panel.addView(recordingView);
 
+        replayView = text("Instant replay: off", 11, 0xFFB8C8D4);
+        panel.addView(replayView);
+
         setupView = text("Setup: ○ USB  ○ packets  ○ decoder  ○ frame", 11, 0xFFB8C8D4);
         advancedPanel.addView(setupView);
 
@@ -586,6 +649,16 @@ public final class MainActivity extends Activity implements
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
+        saveReplayButton = new Button(this);
+        saveReplayButton.setText(R.string.save_replay);
+        configureControlButton(saveReplayButton);
+        saveReplayButton.setMinHeight(dp(58));
+        saveReplayButton.setTextSize(15);
+        saveReplayButton.setOnClickListener(view -> saveInstantReplay());
+        panel.addView(saveReplayButton, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
         Button exportDiagnostics = new Button(this);
         exportDiagnostics.setText(R.string.export_diagnostics);
         configureControlButton(exportDiagnostics);
@@ -602,6 +675,20 @@ public final class MainActivity extends Activity implements
             updateOptionButtons();
         });
         advancedPanel.addView(originalContainerButton);
+
+        LinearLayout replayOptions = new LinearLayout(this);
+        replayOptions.setOrientation(LinearLayout.HORIZONTAL);
+
+        replayEnableButton = new Button(this);
+        configureControlButton(replayEnableButton);
+        replayEnableButton.setOnClickListener(view -> toggleReplayEnabled());
+        replayOptions.addView(replayEnableButton, weightedButtonParams());
+
+        replayDurationButton = new Button(this);
+        configureControlButton(replayDurationButton);
+        replayDurationButton.setOnClickListener(view -> cycleReplayDuration());
+        replayOptions.addView(replayDurationButton, weightedButtonParams());
+        advancedPanel.addView(replayOptions);
 
         LinearLayout optionButtons = new LinearLayout(this);
         optionButtons.setOrientation(LinearLayout.HORIZONTAL);
@@ -689,19 +776,59 @@ public final class MainActivity extends Activity implements
         autoReconnectButton.setText(getString(R.string.auto_reconnect, reconnectState));
         String awakeState = getString(keepAwake ? R.string.state_on : R.string.state_off);
         keepAwakeButton.setText(getString(R.string.keep_awake, awakeState));
+        if (replayEnableButton != null && replayDurationButton != null) {
+            String replayState = getString(
+                    replayEnabled ? R.string.state_on : R.string.state_off);
+            replayEnableButton.setText(getString(R.string.instant_replay, replayState));
+            replayDurationButton.setText(getString(
+                    R.string.replay_window, replayDurationSeconds));
+        }
+        updateReplayUi();
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        boolean memoryPressure = level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW
+                || level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL
+                || level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE;
+        if (memoryPressure && replayEnabled) {
+            replayEnabled = false;
+            replayBuffer.clear();
+            timeline.add("instant_replay", "disabled after memory pressure level=" + level);
+            if (!destroyed) {
+                runOnUiThread(() -> {
+                    onStatus("Instant replay disabled because Android reported low memory");
+                    updateOptionButtons();
+                });
+            }
+        }
     }
 
     private void updateRecordingControlLock() {
         if (displayModeButton == null || aspectButton == null
-                || originalContainerButton == null || recordingButton == null) {
+                || originalContainerButton == null || recordingButton == null
+                || saveReplayButton == null) {
             return;
         }
         boolean recordingLocked = recorder.snapshot().active();
+        boolean replaySaving = replaySaver.snapshot().active();
         displayModeButton.setEnabled(!recordingLocked);
         aspectButton.setEnabled(!recordingLocked);
-        originalContainerButton.setEnabled(!recordingLocked);
+        originalContainerButton.setEnabled(!recordingLocked && !replaySaving);
+        recordingButton.setEnabled(!replaySaving);
         recordingButton.setBackgroundTintList(ColorStateList.valueOf(
                 recordingLocked ? 0xFFC62828 : 0xFF176B64));
+        InstantReplayBuffer.Stats replayStats = replayBuffer.stats();
+        saveReplayButton.setEnabled(
+                replayEnabled && replayStats.ready() && !recordingLocked && !replaySaving);
+        saveReplayButton.setBackgroundTintList(ColorStateList.valueOf(
+                replaySaving ? 0xFF7B1FA2 : 0xFF176B64));
+        if (replayEnableButton != null && replayDurationButton != null) {
+            replayEnableButton.setEnabled(!replaySaving);
+            replayDurationButton.setEnabled(!replaySaving);
+        }
     }
 
     private void updateStatusStrip(double currentFps) {
@@ -815,7 +942,106 @@ public final class MainActivity extends Activity implements
         startRecording();
     }
 
+    private void toggleReplayEnabled() {
+        if (replaySaver.snapshot().active()) {
+            onStatus("Wait for the current replay save to finish");
+            return;
+        }
+        replayEnabled = !replayEnabled;
+        replayBuffer.clear();
+        timeline.add("instant_replay", replayEnabled
+                ? "enabled window_seconds=" + replayDurationSeconds
+                : "disabled and buffer cleared");
+        onStatus(replayEnabled
+                ? "Instant replay enabled; waiting for a usable keyframe"
+                : "Instant replay disabled; retained video cleared");
+        updateOptionButtons();
+    }
+
+    private void cycleReplayDuration() {
+        if (replaySaver.snapshot().active()) {
+            onStatus("Wait for the current replay save to finish");
+            return;
+        }
+        replayDurationSeconds = InstantReplayConfiguration.nextDurationSeconds(
+                replayDurationSeconds);
+        preferences.edit().putInt(
+                PREF_REPLAY_DURATION_SECONDS, replayDurationSeconds).apply();
+        replayBuffer = InstantReplayConfiguration.createBuffer(replayDurationSeconds);
+        timeline.add("instant_replay", "window_seconds=" + replayDurationSeconds
+                + "; buffer reset");
+        onStatus("Replay window changed; buffering restarts at the next keyframe");
+        updateOptionButtons();
+    }
+
+    private void saveInstantReplay() {
+        if (!replayEnabled) {
+            onStatus("Enable instant replay in Advanced settings first");
+            return;
+        }
+        if (recorder.snapshot().active()) {
+            onStatus("Stop the original recording before saving instant replay");
+            return;
+        }
+        if (replaySaver.snapshot().active()) {
+            onStatus("Instant replay is already being saved");
+            return;
+        }
+        if (allocatableBytes() < 500L * 1024 * 1024) {
+            onStatus("Replay save blocked: less than 500 MB usable storage");
+            return;
+        }
+        if (!videoFormatKnown) {
+            onStatus("Replay save needs a confirmed video resolution");
+            return;
+        }
+
+        InstantReplayBuffer.Snapshot clip = replayBuffer.snapshot();
+        if (!clip.ready()) {
+            onStatus("Replay is not ready; waiting for SPS/PPS and a keyframe");
+            return;
+        }
+
+        Uri uri = null;
+        try {
+            uri = createReplayDestination(clip.retainedDurationUs());
+            if (uri == null) {
+                onStatus("Could not create the replay in Movies/DJI Unchained VOC");
+                return;
+            }
+            selectedDestinationAvailableBytes = destinationAvailableBytes(uri);
+            timeline.add("storage", "instant replay destination available_bytes="
+                    + selectedDestinationAvailableBytes);
+            if (!replaySaver.save(uri, clip, sourceWidth, sourceHeight)) {
+                getContentResolver().delete(uri, null, null);
+                onStatus("Replay saver is still finishing the previous file");
+            } else {
+                timeline.add("instant_replay_save", String.format(
+                        Locale.ROOT,
+                        "snapshot units=%d duration_s=%.3f bytes=%d",
+                        clip.samples().size(),
+                        clip.retainedDurationUs() / 1_000_000.0,
+                        clip.retainedBytes()));
+                onStatus("Saving instant replay while buffering continues");
+                updateReplayUi();
+            }
+        } catch (RuntimeException error) {
+            if (uri != null) {
+                try {
+                    getContentResolver().delete(uri, null, null);
+                } catch (RuntimeException ignored) {
+                    // The original failure is reported below.
+                }
+            }
+            onFailure("Could not save instant replay", error);
+        }
+    }
+
     private void startRecording() {
+        if (replaySaver.snapshot().active()) {
+            onStatus("Wait for the instant replay save to finish before recording");
+            return;
+        }
         if (sourceWidth <= 0 || sourceHeight <= 0 || latestVideoPackets <= 0) {
             onStatus("Original-stream recording needs an active video signal");
             return;
@@ -871,6 +1097,19 @@ public final class MainActivity extends Activity implements
         return getContentResolver().insert(collection, values);
     }
 
+    private Uri createReplayDestination(long retainedDurationUs) {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Video.Media.DISPLAY_NAME,
+                replayFileName(retainedDurationUs));
+        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
+        values.put(MediaStore.Video.Media.RELATIVE_PATH,
+                Environment.DIRECTORY_MOVIES + "/DJI Unchained VOC");
+        values.put(MediaStore.Video.Media.IS_PENDING, 1);
+        Uri collection = MediaStore.Video.Media.getContentUri(
+                MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        return getContentResolver().insert(collection, values);
+    }
+
     private void updateRecordingUi(OriginalStreamRecorder.Snapshot snapshot) {
         recordingSnapshot = snapshot;
         long elapsedMillis = snapshot.startedAtMillis() == 0
@@ -916,6 +1155,48 @@ public final class MainActivity extends Activity implements
         updateRecordingControlLock();
     }
 
+    private void updateReplayUi() {
+        if (replayView == null || saveReplayButton == null || replayBuffer == null
+                || replaySaver == null) {
+            return;
+        }
+        InstantReplayBuffer.Stats buffer = replayBuffer.stats();
+        ReplaySaveLifecycle.Snapshot saver = replaySaver.snapshot();
+        replaySaveSnapshot = saver;
+        String value;
+        int color;
+        if (!replayEnabled) {
+            value = "Instant replay: off";
+            color = 0xFFB8C8D4;
+        } else if (saver.state() == ReplaySaveLifecycle.State.SAVING) {
+            value = String.format(
+                    Locale.ROOT,
+                    "Replay saving: %.1f MB; live buffer %.1f s",
+                    saver.bytesWritten() / 1_000_000.0,
+                    buffer.retainedDurationUs() / 1_000_000.0);
+            color = 0xFFCE93D8;
+        } else if (saver.state() == ReplaySaveLifecycle.State.ERROR) {
+            value = saver.message();
+            color = 0xFFFF5252;
+        } else if (buffer.ready()) {
+            value = String.format(
+                    Locale.ROOT,
+                    "Replay ready: %.1f/%d s  %.1f MB",
+                    buffer.retainedDurationUs() / 1_000_000.0,
+                    replayDurationSeconds,
+                    buffer.retainedBytes() / 1_000_000.0);
+            color = 0xFF64E6D9;
+        } else {
+            value = "Replay buffering: waiting for SPS/PPS and keyframe";
+            color = 0xFFFFCC66;
+        }
+        replayView.setText(value);
+        replayView.setTextColor(color);
+        saveReplayButton.setText(saver.active()
+                ? R.string.saving_replay : R.string.save_replay);
+        updateRecordingControlLock();
+    }
+
     private static String formatDuration(long elapsedMillis) {
         long totalSeconds = elapsedMillis / 1_000;
         return String.format(Locale.ROOT, "%02d:%02d",
@@ -941,6 +1222,8 @@ public final class MainActivity extends Activity implements
     private String buildDiagnostics() {
         StreamWatchdog.Evaluation health = latestHealth;
         OriginalStreamRecorder.Snapshot recording = recordingSnapshot;
+        InstantReplayBuffer.Stats replay = replayBuffer.stats();
+        ReplaySaveLifecycle.Snapshot replaySave = replaySaveSnapshot;
         PerformanceTracker.Snapshot performance = performanceTracker.snapshot();
         BatteryManager battery = getSystemService(BatteryManager.class);
         PowerManager power = getSystemService(PowerManager.class);
@@ -954,7 +1237,7 @@ public final class MainActivity extends Activity implements
                 == Configuration.ORIENTATION_PORTRAIT ? "PORTRAIT" : "LANDSCAPE";
 
         return "DJI Unchained VOC " + BuildConfig.VERSION_NAME + " diagnostics\n"
-                + "diagnostic_schema=4\n"
+                + "diagnostic_schema=5\n"
                 + "generated=" + Instant.now() + "\n"
                 + "application_id=" + BuildConfig.APPLICATION_ID + "\n"
                 + "debug_build=" + BuildConfig.DEBUG + "\n"
@@ -995,6 +1278,7 @@ public final class MainActivity extends Activity implements
                 + "auto_reconnect=" + autoReconnect + "\n"
                 + "display_mode=" + displayMode + "\n"
                 + "source_aspect=" + sourceAspect + "\n"
+                + "video_format_known=" + videoFormatKnown + "\n"
                 + "original_container=" + originalContainer + "\n"
                 + "keep_awake=" + keepAwake + "\n"
                 + "default_allocatable_bytes=" + allocatableBytes() + "\n"
@@ -1024,6 +1308,30 @@ public final class MainActivity extends Activity implements
                 + "surface_losses_while_original_recording="
                 + surfaceLossesWhileRecording + "\n"
                 + "original_recording_message=" + recording.message() + "\n"
+                + "instant_replay_enabled=" + replayEnabled + "\n"
+                + "instant_replay_requested_seconds=" + replayDurationSeconds + "\n"
+                + "instant_replay_maximum_bytes="
+                + InstantReplayConfiguration.MAXIMUM_BUFFER_BYTES + "\n"
+                + "instant_replay_ready=" + replay.ready() + "\n"
+                + "instant_replay_buffer_access_units=" + replay.accessUnits() + "\n"
+                + "instant_replay_retained_bytes=" + replay.retainedBytes() + "\n"
+                + "instant_replay_retained_duration_us=" + replay.retainedDurationUs() + "\n"
+                + "instant_replay_evicted_units=" + replay.evictedUnits() + "\n"
+                + "instant_replay_evicted_bytes=" + replay.evictedBytes() + "\n"
+                + "instant_replay_save_state=" + replaySave.state() + "\n"
+                + "instant_replay_save_bytes=" + replaySave.bytesWritten() + "\n"
+                + "instant_replay_save_access_units="
+                + replaySave.accessUnitsWritten() + "\n"
+                + "instant_replay_save_first_pts_us="
+                + replaySave.firstPresentationUs() + "\n"
+                + "instant_replay_save_last_pts_us="
+                + replaySave.lastPresentationUs() + "\n"
+                + "instant_replay_save_timestamp_corrections="
+                + replaySave.timestampCorrections() + "\n"
+                + "instant_replay_save_actual_fps="
+                + decimal(replaySave.actualFramesPerSecond()) + "\n"
+                + "instant_replay_completed_saves=" + replaySave.completedSaves() + "\n"
+                + "instant_replay_save_message=" + replaySave.message() + "\n"
                 + "timeline_events=" + timeline.snapshot().size() + "\n"
                 + "privacy=no serial, account, location, IP, MAC, network history, URI, or path collected\n"
                 + "\n[event_timeline]\n"
@@ -1135,6 +1443,13 @@ public final class MainActivity extends Activity implements
         String extension = container == OriginalStreamRecorder.Container.LOSSLESS_MP4
                 ? ".mp4" : ".h264";
         return "dji-unchained-voc-original-stream-" + timestamp + extension;
+    }
+
+    private String replayFileName(long retainedDurationUs) {
+        String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss", Locale.ROOT)
+                .withZone(ZoneId.systemDefault()).format(Instant.now());
+        long seconds = Math.max(1, Math.round(retainedDurationUs / 1_000_000.0));
+        return "dji-unchained-voc-replay-" + timestamp + "-" + seconds + "s.mp4";
     }
 
     private synchronized void resetStatsBaseline(long videoBytes, long renderedFrames) {
