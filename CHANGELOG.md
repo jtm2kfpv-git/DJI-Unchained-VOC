@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.4 — Focused live view and original recording (unreleased)
+## 0.7.4 — Focused live view and original recording
 
 Removed:
 
@@ -13,6 +13,13 @@ Changed:
 - diagnostics advance to schema 4
 - the interface now focuses on live view, aspect/display controls and original-stream recording
 - the removed implementation remains available in v0.7.3 and earlier snapshots for a possible future redesign
+
+Validation:
+
+- 43 unit tests, debug/release lint, APK assembly and GitHub Actions pass
+- hardware-tested with DJI Goggles N3 on the primary Android 16 phone
+- validated 1920×1080 lossless MP4: 650 frames, 21.69 seconds, approximately 29.97 FPS and zero recorder drops
+- raw H.264 and auto reconnect were not retested in this session
 
 ## 0.7.3 — Identity cleanup (unreleased)
 
