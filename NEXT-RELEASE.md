@@ -1,6 +1,6 @@
 # Next Release — v0.7.4
 
-Status: **Hardware accepted — prerelease publication approved**
+Status: **Published as a hardware-tested alpha prerelease**
 
 Baseline: **v0.7.3**
 
@@ -71,7 +71,7 @@ Implementation history and redesign criteria are recorded in [docs/DEFERRED-FEAT
 - [ ] Raw H.264 fallback retest deferred; the path is unchanged from the earlier hardware-tested implementation.
 - [x] Diagnostic schema 4 export reviewed for errors or drops.
 - [x] README, version history, changelog and project state updated.
-- [ ] APKs, source ZIP and SHA-256 manifests prepared.
+- [x] APKs, source ZIP, build metadata and SHA-256 manifests prepared and published.
 - [x] Publication explicitly approved.
 
 ## Implementation record
@@ -79,7 +79,7 @@ Implementation history and redesign criteria are recorded in [docs/DEFERRED-FEAT
 | Item | Result |
 |---|---|
 | Approved scope | Remove the complete experimental Shorts/MediaProjection feature |
-| Branch | `codex/publish-v0.7.4-prerelease` |
+| Acceptance PR | [#10](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/pull/10), merged as `d075b77` |
 | Build result | Passed: 43 tests, lint, debug/release assembly, APK identity/permission/signature inspection and snapshot parity |
 | Hardware result | Primary workflow passed on POCO F2 Pro / Android 16 with DJI Goggles N3; raw H.264 and auto reconnect not retested |
-| Publication status | Prerelease authorized; artifacts pending guarded build |
+| Publication status | [v0.7.4 hardware-tested alpha prerelease](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/tag/v0.7.4) published with six verified assets |
