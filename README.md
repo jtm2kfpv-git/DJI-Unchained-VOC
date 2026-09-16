@@ -105,11 +105,27 @@ For the complete guarded release workflow, including APK identity, permission an
 .\tools\build-release.ps1
 ```
 
+For an active `-dev` milestone, build directly into its standardized output folder with:
+
+```powershell
+.\tools\build-development.ps1
+```
+
 The release packager intentionally rejects a version ending in `-dev`. During active development,
 use the Gradle verification command; remove the qualifier and create the matching immutable source
 snapshot only when the release candidate is complete.
 
 The debug application ID is `local.djiunchained.voc.debug`; release builds use `local.djiunchained.voc`. Release APKs are intentionally unsigned.
+
+Generated APKs, source archives, checksums and build metadata use one local layout:
+
+```text
+output/
+└── v<version>/
+```
+
+For example, v0.8 development artifacts belong in `output/v0.8.0-dev/`. The entire `output/`
+directory is ignored by Git; published artifacts belong on the matching GitHub release.
 
 To compare the embedded control bytes against the pinned upstream checkout:
 
