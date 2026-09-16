@@ -2,7 +2,7 @@
 
 Verification date: 2026-09-16
 
-Status: **desktop and primary hardware workflow verified; prerelease publication approved**
+Status: **desktop and primary hardware workflow verified; prerelease published**
 
 ## Scope
 
@@ -52,10 +52,11 @@ Results:
 - Controls, aspect selection, lossless original-stream MP4 and manual recovery passed.
 - The captured MP4 decoded all 650 frames and reported zero recorder drops, timestamp corrections or recording-surface losses.
 - Diagnostic schema 4 was exported and reviewed.
-- Raw H.264 and auto reconnect were not retested in this session.
+- Raw H.264 and auto reconnect passed subsequent user-confirmed checks; no second diagnostic export
+  was retained for those follow-up checks.
 
 See [docs/hardware-tests/v0.7.4.md](docs/hardware-tests/v0.7.4.md) for the evidence record.
 
-Prerelease publication was authorized on 2026-09-16.
+The v0.7.4 prerelease was published on 2026-09-16.
 
 The previous verification record remains in [BUILD-VERIFICATION-0.7.3.md](BUILD-VERIFICATION-0.7.3.md).

@@ -240,6 +240,9 @@ $applicationId = $applicationIdMatch.Groups[1].Value
 if ($versionName -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
     Stop-Release "versionName '$versionName' is not a supported semantic version"
 }
+if ($versionName.EndsWith("-dev")) {
+    Stop-Release "development version '$versionName' cannot be packaged as a release"
+}
 
 $snapshotRelative = "versions/v$versionName"
 $snapshotPath = Join-Path $repoRoot $snapshotRelative

@@ -1,85 +1,106 @@
-# Next Release — v0.7.4
+# Next Release — v0.8.0
 
-Status: **Published as a hardware-tested alpha prerelease**
+Status: **Stage 1 complete — replay integration is next**
 
-Baseline: **v0.7.3**
+Baseline: **v0.7.4 hardware-tested alpha prerelease**
 
-Release type: **Scope reduction and stabilization candidate**
+Release theme: **Advanced lossless recording**
 
-This file is the single checklist for the next version. Candidate work is not approved merely because it appears below.
+This file is the single delivery checklist for v0.8.0. Technical decisions are detailed in
+[docs/V0.8-ARCHITECTURE.md](docs/V0.8-ARCHITECTURE.md).
 
 ## Primary objective
 
-Return the app to a focused, privacy-minimal USB live-view and original-stream recorder by removing the experimental Shorts workflow without changing the working DJI USB/H.264 path.
+Add instant replay and configurable recording parts while preserving the privacy, low overhead and
+proven USB/live-view behavior of v0.7.4.
 
-## Approved scope
+## Approved features
 
-- Remove the 9:16 Shorts output mode, crop interaction and 30/60 FPS selector.
-- Remove the Shorts MediaProjection service, encoder, permission flow and foreground-service permissions.
-- Remove Shorts-only diagnostic fields, strings, geometry and tests.
-- Advance diagnostics to schema 4.
-- Preserve v0.7.3 and all earlier source snapshots unchanged.
-- Preserve the removed implementation in Git history and earlier snapshots for possible later redesign.
+### Instant replay
 
-## Required hardware evidence
+- Optional rolling buffer of original compressed H.264 access units.
+- 15, 30 and 60-second duration choices, initially set to 30 seconds when enabled.
+- 128 MiB hard memory ceiling and clear reporting of the actual retained duration.
+- Keyframe-aligned, independently playable lossless MP4 save.
+- Buffer continues receiving while a replay snapshot is written.
 
-- Completed test report based on [TESTING.md](TESTING.md).
-- One diagnostic export for the overall session.
-- For each failure: exact reproduction steps and expected versus actual behavior.
-- A short recording or screenshot only when diagnostics cannot demonstrate the problem.
+### Split recordings
 
-## Candidate stabilization changes
+- Splitting disabled by default.
+- Quick duration choices plus a custom 1–60 minute value.
+- Safe rollover at the first usable IDR keyframe after the requested duration.
+- Independently playable MP4 and raw H.264 parts with stable part numbering.
 
-| Candidate | Reason | Decision |
-|---|---|---|
-| Correct any confirmed original-MP4 recording defect | The remuxer still needs a complete device regression | Pending test |
-| Correct any confirmed raw-H.264 recording defect | The advanced fallback needs device verification | Pending test |
-| Refine control placement or touch behavior | Field handling can improve from actual use | Pending observations |
-| Add diagnostics that explain a demonstrated failure | Evidence-driven fields reduce later debugging time | Pending test |
+### Diagnostics and controls
 
-## Deferred features
+- Diagnostic schema 5 with replay memory, duration, eviction and save metrics.
+- Split configuration, part count, rollover delay and per-part result metrics.
+- Large field-usable replay/recording actions inside the existing bottom control tray.
+- Preferences survive normal app restarts without automatically enabling memory use unexpectedly.
 
-These ideas are preserved for later evaluation and are not part of v0.7.4.
+## Privacy and compatibility constraints
 
-Implementation history and redesign criteria are recorded in [docs/DEFERRED-FEATURES.md](docs/DEFERRED-FEATURES.md).
+- No Internet, cloud, account, analytics, advertising or telemetry functionality.
+- No new Android permissions, service or screen-capture path.
+- No decoded-frame buffering or video re-encoding.
+- No change to the working DJI USB subscription or LogicLink parser.
+- Slow storage must never block USB reception or live decoding.
+- v0.7.4 and every earlier source snapshot and release remain unchanged.
 
-| Potential feature | Initial intent | Status |
-|---|---|---|
-| Redesigned vertical-video export | Revisit 9:16 output without recording the Android screen or controls | Deferred; former Shorts implementation preserved through v0.7.3 |
-| Instant replay buffer | Retain a configurable recent video window that can be saved after an event | Potential v0.8 feature |
-| Split recordings into custom parts | Divide long recordings automatically into user-configurable segments | Potential v0.8 feature |
+## Implementation checklist
 
-## Explicitly out of scope unless separately approved
+### Stage 1 — core policies
 
-- Replacing the working DJI USB/protocol implementation.
-- Internet, cloud, account, telemetry or advertising functionality.
-- Deleting or overwriting earlier source snapshots or releases.
-- Reintroducing MediaProjection or the former Shorts screen-capture design.
-- Large UI redesigns unrelated to observed handling problems.
+- [x] Promote replay and split recording from deferred ideas into approved v0.8 scope.
+- [x] Document memory, keyframe, file-boundary and failure rules.
+- [x] Add a bounded, keyframe-aligned instant-replay buffer model.
+- [x] Add a keyframe-aware recording split policy.
+- [x] Mark the active build `0.8.0-dev` / versionCode 12 and keep release packaging locked.
+- [x] Pass the complete desktop unit-test/lint/build gate: 51 tests and both APK variants.
 
-## Release acceptance gate
+### Stage 2 — replay integration
 
-- [x] Final v0.7.4 scope approved.
-- [x] Root version updated to 0.7.4 / versionCode 11.
-- [x] Shorts runtime, UI, permission and test code removed.
-- [x] Clean unit-test, lint, debug-build and release-build gate passes.
-- [x] Root source matches `versions/v0.7.4`.
-- [x] Debug APK identity, permissions and signature verified.
-- [x] Target-phone primary-workflow checklist completed.
-- [x] DJI Goggles N3 live view passes.
-- [x] Original lossless MP4 recording and playback pass.
-- [ ] Raw H.264 fallback retest deferred; the path is unchanged from the earlier hardware-tested implementation.
-- [x] Diagnostic schema 4 export reviewed for errors or drops.
-- [x] README, version history, changelog and project state updated.
-- [x] APKs, source ZIP, build metadata and SHA-256 manifests prepared and published.
-- [x] Publication explicitly approved.
+- [ ] Feed replay from the existing assembled access-unit path without blocking it.
+- [ ] Add enable, duration and **Save replay** controls.
+- [ ] Add asynchronous lossless replay-MP4 writing.
+- [ ] Add replay status and diagnostic schema 5 fields.
+- [ ] Add failure and lifecycle tests.
 
-## Implementation record
+### Stage 3 — split integration
 
-| Item | Result |
-|---|---|
-| Approved scope | Remove the complete experimental Shorts/MediaProjection feature |
-| Acceptance PR | [#10](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/pull/10), merged as `d075b77` |
-| Build result | Passed: 43 tests, lint, debug/release assembly, APK identity/permission/signature inspection and snapshot parity |
-| Hardware result | Primary workflow passed on POCO F2 Pro / Android 16 with DJI Goggles N3; raw H.264 and auto reconnect not retested |
-| Publication status | [v0.7.4 hardware-tested alpha prerelease](https://github.com/jtm2kfpv-git/DJI-Unchained-VOC/releases/tag/v0.7.4) published with six verified assets |
+- [ ] Add split enable and duration controls.
+- [ ] Move MediaStore destination creation behind a recorder part factory.
+- [ ] Roll MP4 parts on an IDR boundary with fresh per-part timestamps.
+- [ ] Roll raw H.264 parts with SPS/PPS/IDR beginnings.
+- [ ] Add part-state interface and diagnostic fields.
+- [ ] Add failure, stop, disconnect and boundary tests.
+
+### Stage 4 — release preparation
+
+- [ ] Remove the development qualifier and finalize version 0.8.0 / versionCode 12.
+- [ ] Create and verify immutable `versions/v0.8.0` source snapshot.
+- [ ] Pass unit tests, debug/release lint and both APK builds.
+- [ ] Verify zero Android permissions and debug/release signing expectations.
+- [ ] Complete replay and split hardware matrix on the primary phone and Goggles N3.
+- [ ] Decode and inspect every supplied MP4 part and replay output.
+- [ ] Update README, project state, version history and changelog.
+- [ ] Build APK/source/checksum artifacts from merged `main`.
+- [ ] Obtain explicit publication approval.
+
+## Hardware acceptance highlights
+
+1. Compare live-view stability and USB/parser diagnostics with replay off and on.
+2. Save and decode 15, 30 and 60-second replay clips.
+3. Confirm reported retained duration/memory match the saved output.
+4. Produce at least three consecutive split parts and play each independently.
+5. Stop and disconnect immediately before and after a rollover.
+6. Exercise low-storage and writer-overload handling without losing live view.
+7. Confirm auto reconnect safely closes active recording state and resumes video.
+
+## Deferred beyond v0.8
+
+- Reintroduction of vertical-video output.
+- Audio capture or mixing.
+- Background/headless recording.
+- Raspberry Pi implementation; that remains a separate future project.
+- Any network upload, streaming or cloud integration.

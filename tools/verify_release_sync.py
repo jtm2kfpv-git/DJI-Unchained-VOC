@@ -41,6 +41,22 @@ def files_under(base: Path, relative: str) -> dict[str, str]:
 
 def main() -> None:
     current = version_name(ROOT / "app" / "build.gradle")
+    if current.endswith("-dev"):
+        target = current.removesuffix("-dev")
+        next_release = (ROOT / "NEXT-RELEASE.md").read_text(encoding="utf-8")
+        if f"v{target}" not in next_release:
+            raise SystemExit(
+                f"Development version {current} is not tracked in NEXT-RELEASE.md"
+            )
+        if (ROOT / "versions" / f"v{target}").exists():
+            raise SystemExit(
+                f"Development tree must not overwrite release snapshot versions/v{target}"
+            )
+        print(
+            f"development tree {current}: release snapshot parity deferred until v{target}"
+        )
+        return
+
     snapshot = ROOT / "versions" / f"v{current}"
     if not snapshot.is_dir():
         raise SystemExit(f"Missing source snapshot: versions/v{current}")
