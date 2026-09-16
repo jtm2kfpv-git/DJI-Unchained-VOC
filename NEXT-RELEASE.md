@@ -1,6 +1,6 @@
 # Next Release — v0.8.0
 
-Status: **Stage 1 complete — replay integration is next**
+Status: **Stage 2 implemented and desktop-verified — hardware acceptance is next**
 
 Baseline: **v0.7.4 hardware-tested alpha prerelease**
 
@@ -56,15 +56,15 @@ proven USB/live-view behavior of v0.7.4.
 - [x] Add a bounded, keyframe-aligned instant-replay buffer model.
 - [x] Add a keyframe-aware recording split policy.
 - [x] Mark the active build `0.8.0-dev` / versionCode 12 and keep release packaging locked.
-- [x] Pass the complete desktop unit-test/lint/build gate: 51 tests and both APK variants.
+- [x] Pass the complete desktop unit-test/lint/build gate: 55 tests and both APK variants.
 
 ### Stage 2 — replay integration
 
-- [ ] Feed replay from the existing assembled access-unit path without blocking it.
-- [ ] Add enable, duration and **Save replay** controls.
-- [ ] Add asynchronous lossless replay-MP4 writing.
-- [ ] Add replay status and diagnostic schema 5 fields.
-- [ ] Add failure and lifecycle tests.
+- [x] Feed replay from the existing assembled access-unit path without blocking it.
+- [x] Add enable, duration and **Save replay** controls.
+- [x] Add asynchronous lossless replay-MP4 writing.
+- [x] Add replay status and diagnostic schema 5 fields.
+- [x] Add failure, lifecycle, configuration and memory-pressure handling.
 
 ### Stage 3 — split integration
 

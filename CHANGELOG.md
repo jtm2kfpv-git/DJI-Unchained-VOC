@@ -6,12 +6,18 @@ Started:
 
 - bounded, keyframe-aligned instant-replay buffer model
 - keyframe-aware recording split policy
+- working 15/30/60-second instant replay with a 128 MiB compressed-data ceiling
+- asynchronous, keyframe-aligned lossless replay MP4 saving while buffering continues
+- replay controls, live buffer/save status and diagnostic schema 5 metrics
+- defensive buffer clearing on USB reset and automatic disablement under Android memory pressure
+- replay configuration and asynchronous-save lifecycle tests
 - v0.8 architecture, failure rules and hardware acceptance plan
 - explicit development-version handling so CI permits active work while final releases still
   require an exact immutable source snapshot
 
-Validation: 51 unit tests, debug/release lint and both APK assemblies pass. Replay writing, split
-file rollover, interface controls and hardware acceptance remain pending.
+Validation: 55 unit tests in 17 suites, debug/release lint, both APK assemblies, development-tree
+sync and zero-permission inspection pass. Replay hardware acceptance remains pending. Split-file
+rollover remains the next implementation stage.
 
 ## 0.7.4 — Focused live view and original recording
 
