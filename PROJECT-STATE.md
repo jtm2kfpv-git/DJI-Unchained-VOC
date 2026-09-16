@@ -100,6 +100,7 @@ Detailed evidence is recorded in [docs/hardware-tests/v0.7.4.md](docs/hardware-t
 - Repository root contains the current development source.
 - `versions/vX.Y.Z/` contains immutable source snapshots of earlier versions.
 - APKs and release source ZIPs belong on GitHub Releases, not in Git history.
+- Local generated artifacts use only `output/v<version>/`, which is ignored by Git.
 - Do not delete or overwrite an earlier version when starting a new one.
 - Update this file, `NEXT-RELEASE.md`, `TESTING.md`, `VERSIONS.md`, and `CHANGELOG.md` when a release state changes.
 - A version must pass the release-sync check before publication.

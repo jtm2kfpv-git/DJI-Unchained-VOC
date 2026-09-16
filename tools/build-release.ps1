@@ -12,8 +12,8 @@ The script never overwrites an existing release directory. Choose a different
 OutputRoot or remove the old generated directory deliberately before rerunning.
 
 .PARAMETER OutputRoot
-Parent directory for generated release folders. Defaults to a sibling
-DJI-Unchained-VOC-release-output directory outside the Git repository.
+Parent directory for generated version folders. Defaults to the Git-ignored
+output directory inside the repository.
 
 .PARAMETER ProtocolFixture
 Optional path to a pinned dji_protocol checkout. When supplied, the embedded
@@ -221,7 +221,7 @@ function Get-TestSummary {
 
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
-    $OutputRoot = Join-Path (Split-Path $repoRoot -Parent) "DJI-Unchained-VOC-release-output"
+    $OutputRoot = Join-Path $repoRoot "output"
 }
 $outputRootFull = [System.IO.Path]::GetFullPath($OutputRoot)
 
